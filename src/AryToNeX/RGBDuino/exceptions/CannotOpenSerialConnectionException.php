@@ -18,5 +18,10 @@
 
 namespace AryToNeX\RGBDuino\exceptions;
 
+/**
+ * Class CannotOpenSerialConnectionException
+ * @package AryToNeX\RGBDuino\exceptions
+ */
 class CannotOpenSerialConnectionException extends \Exception{
+
 }

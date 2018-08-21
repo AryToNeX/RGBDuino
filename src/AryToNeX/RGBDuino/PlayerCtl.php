@@ -20,70 +20,101 @@ namespace AryToNeX\RGBDuino;
 
 use AryToNeX\RGBDuino\exceptions\NoAlbumArtException;
 
+/**
+ * Class PlayerCtl
+ *
+ * @package AryToNeX\RGBDuino
+ */
 class PlayerCtl{
-    
-    private $binary;
-    private $player;
-    
-    public function __construct(string $player = null, string $PATH = "/usr/bin"){
-        $this->binary = $PATH . "/playerctl";
-        if(isset($player)) $this->player = $player;
-        else $this->player = $this->getPlayers()[0] ?? null;
-    }
 
-    /** @throws \Exception */
-    public function getPosition() : ?int{
-        if(is_null($this->player)) throw new \Exception("No music player was set!");
-        return intval(exec($this->binary . " -p " . $this->player . " position 2>/dev/null")) ?? null;
-    }
+	/** @var string */
+	private $binary;
+	/** @var mixed|null */
+	private $player;
 
-    /** @throws \Exception */
-    public function getTotalDuration() : ?int{
-        if(is_null($this->player)) throw new \Exception("No music player was set!");
-        return
-            (intval(exec($this->binary . " -p " . $this->player . " metadata mpris:length 2>/dev/null")) / 100000)
-            ?? null;
-    }
+	/**
+	 * PlayerCtl constructor.
+	 *
+	 * @param string|null $player
+	 * @param string      $PATH
+	 */
+	public function __construct(string $player = null, string $PATH = "/usr/bin"){
+		$this->binary = $PATH . "/playerctl";
+		if(isset($player)) $this->player = $player;
+		else $this->player = $this->getPlayers()[0] ?? null;
+	}
 
-    /** @throws \Exception */
-    public function getStatus() : ?string{
-        if(is_null($this->player)) throw new \Exception("No music player was set!");
-        return trim(strval(exec($this->binary . " -p " . $this->player . " status 2>/dev/null"))) ?? null;
-    }
+	/** @throws \Exception */
+	public function getPosition() : ?int{
+		if(is_null($this->player)) throw new \Exception("No music player was set!");
 
-    /** @throws \Exception */
-    public function getArtist() : ?string{
-        if(is_null($this->player)) throw new \Exception("No music player was set!");
-        return strval(exec($this->binary . " -p " . $this->player . " metadata artist 2>/dev/null")) ?? null;
-    }
+		return intval(exec($this->binary . " -p " . $this->player . " position 2>/dev/null")) ?? null;
+	}
 
-    /** @throws \Exception */
-    public function getTitle() : ?string{
-        if(is_null($this->player)) throw new \Exception("No music player was set!");
-        return strval(exec($this->binary . " -p " . $this->player . " metadata title 2>/dev/null")) ?? null;
-    }
+	/** @throws \Exception */
+	public function getTotalDuration() : ?int{
+		if(is_null($this->player)) throw new \Exception("No music player was set!");
 
-    /**
-     * @throws \Exception
-     * @throws NoAlbumArtException
-     */
-    public function getAlbumArtURL() : ?string{
-        if(is_null($this->player)) throw new \Exception("No music player was set!");
-        $ret = urldecode(strval(exec($this->binary . " -p " . $this->player . " metadata mpris:artUrl 2>/dev/null"))) ?? null;
-        if(is_null($ret) || $ret == "") throw new NoAlbumArtException("Album art not defined or NULL on MPRIS2.");
-        return $ret;
-    }
+		return
+			(intval(exec($this->binary . " -p " . $this->player . " metadata mpris:length 2>/dev/null")) / 100000)
+			?? null;
+	}
 
-    public function getPlayers() : array{
-        exec($this->binary . " -l 2>/dev/null", $output);
-        return $output;
-    }
+	/** @throws \Exception */
+	public function getStatus() : ?string{
+		if(is_null($this->player)) throw new \Exception("No music player was set!");
 
-    public function getActivePlayer() : ?string{
-        return $this->player;
-    }
+		return trim(strval(exec($this->binary . " -p " . $this->player . " status 2>/dev/null"))) ?? null;
+	}
 
-    public function setActivePlayer(?string $player) : void{
-        $this->player = $player;
-    }
+	/** @throws \Exception */
+	public function getArtist() : ?string{
+		if(is_null($this->player)) throw new \Exception("No music player was set!");
+
+		return strval(exec($this->binary . " -p " . $this->player . " metadata artist 2>/dev/null")) ?? null;
+	}
+
+	/** @throws \Exception */
+	public function getTitle() : ?string{
+		if(is_null($this->player)) throw new \Exception("No music player was set!");
+
+		return strval(exec($this->binary . " -p " . $this->player . " metadata title 2>/dev/null")) ?? null;
+	}
+
+	/**
+	 * @throws \Exception
+	 * @throws NoAlbumArtException
+	 */
+	public function getAlbumArtURL() : ?string{
+		if(is_null($this->player)) throw new \Exception("No music player was set!");
+		$ret = urldecode(
+				strval(exec($this->binary . " -p " . $this->player . " metadata mpris:artUrl 2>/dev/null"))
+			) ?? null;
+		if(is_null($ret) || $ret == "") throw new NoAlbumArtException("Album art not defined or NULL on MPRIS2.");
+
+		return $ret;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getPlayers() : array{
+		exec($this->binary . " -l 2>/dev/null", $output);
+
+		return $output;
+	}
+
+	/**
+	 * @return null|string
+	 */
+	public function getActivePlayer() : ?string{
+		return $this->player;
+	}
+
+	/**
+	 * @param null|string $player
+	 */
+	public function setActivePlayer(?string $player) : void{
+		$this->player = $player;
+	}
 }

@@ -18,5 +18,10 @@
 
 namespace AryToNeX\RGBDuino\exceptions;
 
+/**
+ * Class NoArduinoConnectedException
+ * @package AryToNeX\RGBDuino\exceptions
+ */
 class NoArduinoConnectedException extends \Exception{
+
 }

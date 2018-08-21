@@ -18,14 +18,27 @@
 
 namespace AryToNeX\RGBDuino;
 
+/**
+ * Class Utils
+ *
+ * @package AryToNeX\RGBDuino
+ */
 class Utils{
 
 	// Color sanitizer for LED strip
+
+	/**
+	 * @param array $rgb
+	 * @param float $minSaturation
+	 * @param float $minLuminance
+	 *
+	 * @return array
+	 */
 	public static function sanitizeColor(array $rgb, float $minSaturation = 0.75, float $minLuminance = 0.50) : array{
-		if ($rgb["r"] == $rgb["g"] && $rgb["g"] == $rgb["b"]) if ($rgb["r"] > 64)
-		    return array("r" => 255, "g" => 255, "b" => 255);
+		if($rgb["r"] == $rgb["g"] && $rgb["g"] == $rgb["b"]) if($rgb["r"] > 64)
+			return array("r" => 255, "g" => 255, "b" => 255);
 		else
-		    return array("r" => 0, "g" => 0, "b" => 0);
+			return array("r" => 0, "g" => 0, "b" => 0);
 
 		$hsv = color\Color::fromRgbToHsv($rgb);
 
@@ -37,7 +50,8 @@ class Utils{
 
 
 	// Image utils
-    /** @deprecated */
+
+	/** @deprecated */
 	public static function dominantColorFromImageLegacy(string $url) : array{
 		$im = file_get_contents($url);
 		$rTotal = 0;
@@ -46,8 +60,8 @@ class Utils{
 		$total = 0;
 
 		$i = imagecreatefromstring($im);
-		for ($x = 0; $x < imagesx($i); $x++) {
-			for ($y = 0; $y < imagesy($i); $y++) {
+		for($x = 0; $x < imagesx($i); $x++){
+			for($y = 0; $y < imagesy($i); $y++){
 				$rgb = imagecolorat($i, $x, $y);
 				$r = ($rgb >> 16) & 0xFF;
 				$g = ($rgb >> 8) & 0xFF;
@@ -65,102 +79,130 @@ class Utils{
 		return array("r" => $rAverage, "g" => $gAverage, "b" => $bAverage);
 	}
 
+	/**
+	 * @param string $url
+	 *
+	 * @return array
+	 */
 	public static function dominantColorFromImage(string $url) : array{
-        $palette = color\Palette::fromFilename($url);
-        $extractor = new color\ColorExtractor($palette);
-        return color\Color::fromIntToRgb($extractor->extract(1)[0]);
-    }
+		$palette = color\Palette::fromFilename($url);
+		$extractor = new color\ColorExtractor($palette);
 
-    public static function dominantColorArrayFromImage(string $url, int $colors = 5) : array{
-        $palette = color\Palette::fromFilename($url);
-        $extractor = new color\ColorExtractor($palette);
-        $colorsArr = $extractor->extract($colors);
-        for($i = 0; $i < count($colorsArr); $i++)
-            $colorsArr[$i] = color\Color::fromIntToRgb($colorsArr[$i]);
-        return $colorsArr;
-    }
+		return color\Color::fromIntToRgb($extractor->extract(1)[0]);
+	}
 
+	/**
+	 * @param string $url
+	 * @param int    $colors
+	 *
+	 * @return array
+	 */
+	public static function dominantColorArrayFromImage(string $url, int $colors = 5) : array{
+		$palette = color\Palette::fromFilename($url);
+		$extractor = new color\ColorExtractor($palette);
+		$colorsArr = $extractor->extract($colors);
+		for($i = 0; $i < count($colorsArr); $i++)
+			$colorsArr[$i] = color\Color::fromIntToRgb($colorsArr[$i]);
+
+		return $colorsArr;
+	}
 
 	// Desktop environment utils (Thanks to TDesktop)
-    public static function getDesktopEnvironment(){
-        $xdgCurrentDesktop = strtolower(getenv("XDG_CURRENT_DESKTOP"));
-        $list = explode(":", $xdgCurrentDesktop);
-        $desktopSession = strtolower(getenv("DESKTOP_SESSION"));
-        $kdeSession = getenv("KDE_SESSION_VERSION");
-        if (!empty($list)) {
-            if (in_array("unity", $list)) {
-                // gnome-fallback sessions set XDG_CURRENT_DESKTOP to Unity
-                // DESKTOP_SESSION can be gnome-fallback or gnome-fallback-compiz
-                if (strpos($desktopSession, "gnome-fallback") >= 0) {
-                    return "Gnome";
-                }
-                return "Unity";
-            } else if (in_array("xfce", $list)) {
-                return "XFCE";
-            } else if (in_array("pantheon", $list)) {
-                return "Pantheon";
-            } else if (in_array("gnome", $list)) {
-                if (in_array("ubuntu", $list))
-                    return "Ubuntu";
-                return "Gnome";
-            } else if (in_array("kde", $list)) {
-                if ($kdeSession == "5") {
-                    return "KDE5";
-                }
-                return "KDE4";
-            }
-        }
 
-        if ($desktopSession !== "") {
-            if ($desktopSession == "gnome" || $desktopSession == "mate") {
-                return "Gnome";
-            } else if ($desktopSession == "kde4" || $desktopSession == "kde-plasma") {
-                return "KDE4";
-            } else if ($desktopSession == "kde") {
-                // This may mean KDE4 on newer systems, so we have to check.
-                if ($kdeSession !== "") {
-                    return "KDE4";
-                }
-                return "KDE3";
-            } else if (strpos($desktopSession, "xfce") >= 0 || $desktopSession == "xubuntu") {
-                return "XFCE";
-            } else if ($desktopSession == "awesome") {
-                return "Awesome";
-            }
-        }
+	/**
+	 * @return string
+	 */
+	public static function getDesktopEnvironment() : string{
+		$xdgCurrentDesktop = strtolower(getenv("XDG_CURRENT_DESKTOP"));
+		$list = explode(":", $xdgCurrentDesktop);
+		$desktopSession = strtolower(getenv("DESKTOP_SESSION"));
+		$kdeSession = getenv("KDE_SESSION_VERSION");
+		if(!empty($list)){
+			if(in_array("unity", $list)){
+				// gnome-fallback sessions set XDG_CURRENT_DESKTOP to Unity
+				// DESKTOP_SESSION can be gnome-fallback or gnome-fallback-compiz
+				if(strpos($desktopSession, "gnome-fallback") >= 0){
+					return "Gnome";
+				}
 
-        // Fall back on some older environment variables.
-        // Useful particularly in the DESKTOP_SESSION=default case.
-        if (getenv("GNOME_DESKTOP_SESSION_ID") !== "") {
-            return "Gnome";
-        } else if (getenv("KDE_FULL_SESSION") !== "") {
-            if ($kdeSession !== "") {
-                return "KDE4";
-            }
-            return "KDE3";
-        }
+				return "Unity";
+			}else if(in_array("xfce", $list)){
+				return "XFCE";
+			}else if(in_array("pantheon", $list)){
+				return "Pantheon";
+			}else if(in_array("gnome", $list)){
+				if(in_array("ubuntu", $list))
+					return "Ubuntu";
 
-        return "Other";
-    }
+				return "Gnome";
+			}else if(in_array("kde", $list)){
+				if($kdeSession == "5"){
+					return "KDE5";
+				}
 
+				return "KDE4";
+			}
+		}
 
-    // Wallpaper utils
-    public static function getWallpaperURL(){
-        $env = self::getDesktopEnvironment();
-        switch($env){
-            default:
-                echo "Unsupported DE $env!";
-                return "";
-            case "XFCE":
-                return exec("xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace0/last-image");
-            case "Gnome":
-            case "Unity":
-            case "Pantheon":
-                return exec("gsettings get org.gnome.desktop.background picture-uri");
-            case "KDE5":
-                // command by @LucentW
-                return exec("grep /home/$(whoami)/.kde/share/config/plasma-overlay-appletsrc 'wallpaper=' | sed 's/wallpaper=//'");
-        }
-    }
+		if($desktopSession !== ""){
+			if($desktopSession == "gnome" || $desktopSession == "mate"){
+				return "Gnome";
+			}else if($desktopSession == "kde4" || $desktopSession == "kde-plasma"){
+				return "KDE4";
+			}else if($desktopSession == "kde"){
+				// This may mean KDE4 on newer systems, so we have to check.
+				if($kdeSession !== ""){
+					return "KDE4";
+				}
+
+				return "KDE3";
+			}else if(strpos($desktopSession, "xfce") >= 0 || $desktopSession == "xubuntu"){
+				return "XFCE";
+			}else if($desktopSession == "awesome"){
+				return "Awesome";
+			}
+		}
+
+		// Fall back on some older environment variables.
+		// Useful particularly in the DESKTOP_SESSION=default case.
+		if(getenv("GNOME_DESKTOP_SESSION_ID") !== ""){
+			return "Gnome";
+		}else if(getenv("KDE_FULL_SESSION") !== ""){
+			if($kdeSession !== ""){
+				return "KDE4";
+			}
+
+			return "KDE3";
+		}
+
+		return "Other";
+	}
+
+	// Wallpaper utils
+
+	/**
+	 * @return string
+	 */
+	public static function getWallpaperURL() : string{
+		$env = self::getDesktopEnvironment();
+		switch($env){
+			default:
+				echo "Unsupported DE $env!";
+
+				return "";
+			case "XFCE":
+				return exec("xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitor0/workspace0/last-image");
+			case "Gnome":
+			case "Unity":
+			case "Ubuntu":
+			case "Pantheon":
+				return exec("gsettings get org.gnome.desktop.background picture-uri");
+			case "KDE5":
+				// command by @LucentW
+				return exec(
+					"grep /home/$(whoami)/.kde/share/config/plasma-overlay-appletsrc 'wallpaper=' | sed 's/wallpaper=//'"
+				);
+		}
+	}
 
 }

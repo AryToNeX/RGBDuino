@@ -9,6 +9,13 @@
   "fadeSeconds": 2,
   "artFadeSeconds": 5,
   "cycleFadeSeconds": 10,
-  "cycleColors": ["FF0000", "FFFF00", "00FF00", "00FFFF", "0000FF", "FF00FF"],
+  "cycleColors": [
+    "FF0000",
+    "FFFF00",
+    "00FF00",
+    "00FFFF",
+    "0000FF",
+    "FF00FF"
+  ],
   "tcpPort": 6969
 }

@@ -3,125 +3,132 @@
 array_shift($argv);
 
 $tcpPort = json_decode(
-    file_get_contents(
-        "/home/" .  exec("whoami") . "/.local/share/RGBDuino/config.json"
-    ), true
-    )["tcpPort"] ?? 6969;
+			   file_get_contents(
+				   "/home/" . exec("whoami") . "/.local/share/RGBDuino/config.json"
+			   ),
+			   true
+		   )["tcpPort"] ?? 6969;
 
 $sock = null;
 
 if(!isset($argv[0]) || $argv[0] == "help"){
-    helpMessage();
-    exit(0);
+	helpMessage();
+	exit(0);
 }
 
-switch ($argv[0]){
-    case "update":
-        echo "Searching for updates...\n";
-        $offlineBuild = intval(file_get_contents(
-            "/home/" .  exec("whoami") . "/.local/share/RGBDuino/current-build"
-        )) ?? 0;
-        $onlineBuild = intval(file_get_contents(
-                "http://tony0000.altervista.org/RGBDuino/currentbuild.txt"
-        ));
-        if($onlineBuild > $offlineBuild){
-            echo "A new build is available (using build: $offlineBuild; online build: $onlineBuild)\nUpdating!\n";
-            copy(
-                "http://tony0000.altervista.org/RGBDuino/builds/$onlineBuild/RGBDuino.phar",
-                "/home/" .  exec("whoami") . "/.local/share/RGBDuino/RGBDuino.phar"
-            );
-            copy(
-                "http://tony0000.altervista.org/RGBDuino/builds/$onlineBuild/rgbduino",
-                "/home/" .  exec("whoami") . "/.local/share/RGBDuino/rgbduino"
-            );
-            file_put_contents(
-                "/home/" .  exec("whoami") . "/.local/share/RGBDuino/current-build",
-                $onlineBuild
-            );
-            echo "RGBDuino was updated!\n";
-            $pid = exec("pidof -s rgbduino-daemon");
-            if(empty($pid)) exit(0);
-            exec("kill -INT $pid 2> /dev/null && wait $pid 2> /dev/null");
-            echo "Restarting RGBDuino after update...\n";
-            exec("screen -dmS rgbduino php /home/$(whoami)/.local/share/RGBDuino/RGBDuino.phar", $out, $status);
-            if($status == 0) echo "Daemon restarted on 'rgbduino' screen.\nView the log at 'screen -r rgbduino'.\n";
-            else echo "Failed to restart the daemon.\n";
-        }else{
-            echo "No updates found!\n";
-        }
-        exit(0);
-    case "listPlayers":
-        echo "Available players:\n".exec("playerctl -l 2>/dev/null")."\n";
-        exit(0);
-    case "start":
-        if(empty(exec("which screen"))) die("You should install screen!\n");
-        $pid = exec("pidof -s rgbduino-daemon");
-        if(!empty($pid)) die("Daemon is already running!\n");
-        exec("screen -dmS rgbduino php /home/$(whoami)/.local/share/RGBDuino/RGBDuino.phar", $out, $status);
-        if($status == 0) echo "Daemon started on 'rgbduino' screen.\nView the log at 'screen -r rgbduino'.\n";
-        else echo "Failed to start the daemon.\n";
-        exit(0);
-    case "restart":
-        if(empty(exec("which screen"))) die("You should install screen!\n");
-        $pid = exec("pidof -s rgbduino-daemon");
-        if(empty($pid)) die("Daemon is not running!\n");
-        exec("kill -INT $pid 2> /dev/null && wait $pid 2> /dev/null");
-        echo "Daemon was stopped.\nRestarting it...\n";
-        exec("screen -dmS rgbduino php /home/$(whoami)/.local/share/RGBDuino/RGBDuino.phar", $out, $status);
-        if($status == 0) echo "Daemon restarted on 'rgbduino' screen.\nView the log at 'screen -r rgbduino'.\n";
-        else echo "Failed to restart the daemon.\n";
-        exit(0);
-    case "stop":
-        $pid = exec("pidof -s rgbduino-daemon");
-        if(empty($pid)) die("Daemon is not running!\n");
-        exec("kill -INT $pid 2> /dev/null && wait $pid 2> /dev/null");
-        echo "Daemon was stopped.\n";
-        exit(0);
-    case "kill":
-        $pid = exec("pidof -s rgbduino-daemon");
-        if(empty($pid)) die("Daemon is not running!\n");
-        exec("kill -9 $pid");
-        echo "Daemon was killed.\n";
-        exit(0);
+switch($argv[0]){
+	case "update":
+		echo "Searching for updates...\n";
+		$offlineBuild = intval(
+				file_get_contents(
+					"/home/" . exec("whoami") . "/.local/share/RGBDuino/current-build"
+				)
+			) ?? 0;
+		$onlineBuild = intval(
+			file_get_contents(
+				"http://tony0000.altervista.org/RGBDuino/currentbuild.txt"
+			)
+		);
+		if($onlineBuild > $offlineBuild){
+			echo "A new build is available (using build: $offlineBuild; online build: $onlineBuild)\nUpdating!\n";
+			copy(
+				"http://tony0000.altervista.org/RGBDuino/builds/$onlineBuild/RGBDuino.phar",
+				"/home/" . exec("whoami") . "/.local/share/RGBDuino/RGBDuino.phar"
+			);
+			copy(
+				"http://tony0000.altervista.org/RGBDuino/builds/$onlineBuild/rgbduino",
+				"/home/" . exec("whoami") . "/.local/share/RGBDuino/rgbduino"
+			);
+			file_put_contents(
+				"/home/" . exec("whoami") . "/.local/share/RGBDuino/current-build",
+				$onlineBuild
+			);
+			echo "RGBDuino was updated!\n";
+			$pid = exec("pidof -s rgbduino-daemon");
+			if(empty($pid)) exit(0);
+			exec("kill -INT $pid 2> /dev/null && wait $pid 2> /dev/null");
+			echo "Restarting RGBDuino after update...\n";
+			exec("screen -dmS rgbduino php /home/$(whoami)/.local/share/RGBDuino/RGBDuino.phar", $out, $status);
+			if($status == 0) echo "Daemon restarted on 'rgbduino' screen.\nView the log at 'screen -r rgbduino'.\n";
+			else echo "Failed to restart the daemon.\n";
+		}else{
+			echo "No updates found!\n";
+		}
+		exit(0);
+	case "listPlayers":
+		echo "Available players:\n" . exec("playerctl -l 2>/dev/null") . "\n";
+		exit(0);
+	case "start":
+		if(empty(exec("which screen"))) die("You should install screen!\n");
+		$pid = exec("pidof -s rgbduino-daemon");
+		if(!empty($pid)) die("Daemon is already running!\n");
+		exec("screen -dmS rgbduino php /home/$(whoami)/.local/share/RGBDuino/RGBDuino.phar", $out, $status);
+		if($status == 0) echo "Daemon started on 'rgbduino' screen.\nView the log at 'screen -r rgbduino'.\n";
+		else echo "Failed to start the daemon.\n";
+		exit(0);
+	case "restart":
+		if(empty(exec("which screen"))) die("You should install screen!\n");
+		$pid = exec("pidof -s rgbduino-daemon");
+		if(empty($pid)) die("Daemon is not running!\n");
+		exec("kill -INT $pid 2> /dev/null && wait $pid 2> /dev/null");
+		echo "Daemon was stopped.\nRestarting it...\n";
+		exec("screen -dmS rgbduino php /home/$(whoami)/.local/share/RGBDuino/RGBDuino.phar", $out, $status);
+		if($status == 0) echo "Daemon restarted on 'rgbduino' screen.\nView the log at 'screen -r rgbduino'.\n";
+		else echo "Failed to restart the daemon.\n";
+		exit(0);
+	case "stop":
+		$pid = exec("pidof -s rgbduino-daemon");
+		if(empty($pid)) die("Daemon is not running!\n");
+		exec("kill -INT $pid 2> /dev/null && wait $pid 2> /dev/null");
+		echo "Daemon was stopped.\n";
+		exit(0);
+	case "kill":
+		$pid = exec("pidof -s rgbduino-daemon");
+		if(empty($pid)) die("Daemon is not running!\n");
+		exec("kill -9 $pid");
+		echo "Daemon was killed.\n";
+		exit(0);
 }
 
 if(!$sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) die("Couldn't create socket!\n");
 if(!socket_connect($sock, "0.0.0.0", $tcpPort)) die("Couldn't connect to socket!\n");
 
-switch ($argv[0]){
-    case "saveColor":
-        $response = writeCommand($argv);
-        if($response === "COLOR_SAVED") echo "Displayed color is now saved to EEPROM.\n";
-        else echo "There was a problem while saving the color to EEPROM.\n";
-        break;
-    case "unsetColor":
-        $response = writeCommand($argv);
-        if($response === "COLOR_UNSET") echo "Custom color was unset.\n";
-        else echo "There was a problem while unsetting the custom color.\n";
-        break;
-    case "setColor":
-        if(!isset($argv[1])) die("You must specify a color!\n");
-        $response = writeCommand([
-            $argv[0],
-            str_replace("#", "", $argv[1])
-        ]);
-        if($response === "COLOR_SET") echo "Color set to {$argv[1]}!\n";
-        else echo "There was a problem while setting the color.\n";
-        break;
-    case "setPlayer":
-        if(!isset($argv[1])) die("You must specify a music player!\n");
-        $response = writeCommand($argv);
-        if($response === "PLAYER_SET") echo "Player set!\n";
-        else echo "There was a problem while setting the player.\nPlease get the list of currently available players via 'playerctl -l'.\n";
-        break;
-    default:
-        $response = writeCommand($argv);
-        if($response === "UNDEFINED_COMMAND") echo "Undefined command.\n";
-        else echo "Daemon's response: $response\n";
-        break;
+switch($argv[0]){
+	case "saveColor":
+		$response = writeCommand($argv);
+		if($response === "COLOR_SAVED") echo "Displayed color is now saved to EEPROM.\n";
+		else echo "There was a problem while saving the color to EEPROM.\n";
+		break;
+	case "unsetColor":
+		$response = writeCommand($argv);
+		if($response === "COLOR_UNSET") echo "Custom color was unset.\n";
+		else echo "There was a problem while unsetting the custom color.\n";
+		break;
+	case "setColor":
+		if(!isset($argv[1])) die("You must specify a color!\n");
+		$response = writeCommand(
+			[
+				$argv[0],
+				str_replace("#", "", $argv[1]),
+			]
+		);
+		if($response === "COLOR_SET") echo "Color set to {$argv[1]}!\n";
+		else echo "There was a problem while setting the color.\n";
+		break;
+	case "setPlayer":
+		if(!isset($argv[1])) die("You must specify a music player!\n");
+		$response = writeCommand($argv);
+		if($response === "PLAYER_SET") echo "Player set!\n";
+		else echo "There was a problem while setting the player.\nPlease get the list of currently available players via 'playerctl -l'.\n";
+		break;
+	default:
+		$response = writeCommand($argv);
+		if($response === "UNDEFINED_COMMAND") echo "Undefined command.\n";
+		else echo "Daemon's response: $response\n";
+		break;
 }
 
-$linger = array ('l_linger' => 1, 'l_onoff' => 1);
+$linger = array('l_linger' => 1, 'l_onoff' => 1);
 socket_set_option($sock, SOL_SOCKET, SO_LINGER, $linger);
 socket_shutdown($sock);
 socket_close($sock);
@@ -129,7 +136,7 @@ socket_close($sock);
 //FUNCTIONS
 
 function helpMessage(){
-    echo "RGBDuino vINDEV - Help page
+	echo "RGBDuino vINDEV - Help page
 
 Available commands:
 - help: this command, nothing to do
@@ -145,33 +152,35 @@ Available commands:
 }
 
 function writeCommand(array $args){
-    socket_write($GLOBALS["sock"], implode(" ", $args)."\n");
-    $response = socket_read_until($GLOBALS["sock"], "\n");
-    return $response;
+	socket_write($GLOBALS["sock"], implode(" ", $args) . "\n");
+	$response = socket_read_until($GLOBALS["sock"], "\n");
+
+	return $response;
 }
 
 function socket_read_until($sock, string $str, bool $or_until_data_finish = true, int $timeout = 5) : string{
-    $data = "";
-    $buf = "";
-    $preTime = time();
-    while(true){
-        $by = socket_recv($sock, $buf, 1, MSG_DONTWAIT);
-        // if char reached break
-        if($buf === $str) break;
+	$data = "";
+	$buf = "";
+	$preTime = time();
+	while(true){
+		$by = socket_recv($sock, $buf, 1, MSG_DONTWAIT);
+		// if char reached break
+		if($buf === $str) break;
 
-        // if remote disconnects break
-        if($by === 0) break;
+		// if remote disconnects break
+		if($by === 0) break;
 
-        // if connection timeouts break
-        if(time() - $preTime > $timeout) break;
+		// if connection timeouts break
+		if(time() - $preTime > $timeout) break;
 
-        // if data finishes break
-        if($or_until_data_finish && $buf === null){
-            if($data !== "") break;
-        }
+		// if data finishes break
+		if($or_until_data_finish && $buf === null){
+			if($data !== "") break;
+		}
 
-        // add buffer to data string
-        $data .= $buf;
-    }
-    return $data;
+		// add buffer to data string
+		$data .= $buf;
+	}
+
+	return $data;
 }

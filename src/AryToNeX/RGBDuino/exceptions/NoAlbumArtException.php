@@ -18,5 +18,10 @@
 
 namespace AryToNeX\RGBDuino\exceptions;
 
+/**
+ * Class NoAlbumArtException
+ * @package AryToNeX\RGBDuino\exceptions
+ */
 class NoAlbumArtException extends \Exception{
+
 }

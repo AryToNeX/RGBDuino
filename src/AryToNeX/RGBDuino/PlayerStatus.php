@@ -20,72 +20,112 @@ namespace AryToNeX\RGBDuino;
 
 use AryToNeX\RGBDuino\exceptions\NoAlbumArtException;
 
+/**
+ * Class PlayerStatus
+ *
+ * @package AryToNeX\RGBDuino
+ */
 class PlayerStatus{
 
-    private $owner;
+	/** @var Status */
+	private $owner;
+	/** @var PlayerCtl */
 	private $playerctl;
+	/** @var string */
 	private $artURL;
 
+	/**
+	 * PlayerStatus constructor.
+	 *
+	 * @param Status    $owner
+	 * @param PlayerCtl $playerctl
+	 */
 	public function __construct(Status $owner, PlayerCtl $playerctl){
-	    $this->owner = $owner;
+		$this->owner = $owner;
 		$this->playerctl = $playerctl;
 	}
 
+	/**
+	 * @return PlayerCtl
+	 */
 	public function getPlayerCtl(){
 		return $this->playerctl;
 	}
 
+	/**
+	 * @return bool
+	 */
 	public function updateArtURL() : bool{
-	    try {
-	        $this->artURL = str_replace( // spotify sucks so we get the art without the spotify logo in the bottom right corner
-	            "https://open.spotify.com/",
-                "http://i.scdn.co/",
-                $this->playerctl->getAlbumArtURL());
-        } catch (\Exception | NoAlbumArtException $e) {
-	        $this->artURL = "";
-            return false;
-        }
-	    return true;
-    }
+		try{
+			$this->artURL = str_replace( // spotify sucks so we get the art without the spotify logo in the bottom right corner
+				"https://open.spotify.com/",
+				"http://i.scdn.co/",
+				$this->playerctl->getAlbumArtURL()
+			);
+		}catch(\Exception | NoAlbumArtException $e){
+			$this->artURL = "";
 
-    public function getArtURL() : string{
-        return $this->artURL ?? "";
-    }
+			return false;
+		}
 
-	public function isPlaying() : bool{
-	    try {
-            return $this->playerctl->getStatus() == "Playing";
-        }catch (\Exception $e){
-	        return false;
-        }
+		return true;
 	}
 
+	/**
+	 * @return string
+	 */
+	public function getArtURL() : string{
+		return $this->artURL ?? "";
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isPlaying() : bool{
+		try{
+			return $this->playerctl->getStatus() == "Playing";
+		}catch(\Exception $e){
+			return false;
+		}
+	}
+
+	/**
+	 * @return bool
+	 */
 	public function checkForPlayers() : bool{
-	    if(!empty($this->playerctl->getPlayers())){
-	        if(!in_array($this->playerctl->getActivePlayer(), $this->playerctl->getPlayers()))
-	            $this->playerctl->setActivePlayer($this->playerctl->getPlayers()[0] ?? null);
-            return true;
-        }
-        return false;
-    }
+		if(!empty($this->playerctl->getPlayers())){
+			if(!in_array($this->playerctl->getActivePlayer(), $this->playerctl->getPlayers()))
+				$this->playerctl->setActivePlayer($this->playerctl->getPlayers()[0] ?? null);
 
-    /** @throws \Exception */
+			return true;
+		}
+
+		return false;
+	}
+
+	/** @throws \Exception */
 	public function getAlbumArtColor() : array{
-            return Utils::sanitizeColor(
-                Utils::dominantColorFromImage($this->artURL),
-                $this->owner->getConfig()->getValue("minArtSaturation") ?? null,
-                $this->owner->getConfig()->getValue("minArtLuminance") ?? null
-            );
-    }
+		return Utils::sanitizeColor(
+			Utils::dominantColorFromImage($this->artURL),
+			$this->owner->getConfig()->getValue("minArtSaturation") ?? null,
+			$this->owner->getConfig()->getValue("minArtLuminance") ?? null
+		);
+	}
 
-    public function getAlbumArtColorArray(int $colors = 5) : ?array{
-	    $rgbArr = Utils::dominantColorArrayFromImage($this->artURL, $colors);
-	    foreach($rgbArr as $i => $rgb) $rgbArr[$i] = Utils::sanitizeColor(
-	        $rgb,
-            $this->owner->getConfig()->getValue("minArtSaturation") ?? null,
-            $this->owner->getConfig()->getValue("minArtLuminance") ?? null
-        );
-	    return $rgbArr;
-    }
+	/**
+	 * @param int $colors
+	 *
+	 * @return array|null
+	 */
+	public function getAlbumArtColorArray(int $colors = 5) : ?array{
+		$rgbArr = Utils::dominantColorArrayFromImage($this->artURL, $colors);
+		foreach($rgbArr as $i => $rgb) $rgbArr[$i] = Utils::sanitizeColor(
+			$rgb,
+			$this->owner->getConfig()->getValue("minArtSaturation") ?? null,
+			$this->owner->getConfig()->getValue("minArtLuminance") ?? null
+		);
+
+		return $rgbArr;
+	}
 
 }

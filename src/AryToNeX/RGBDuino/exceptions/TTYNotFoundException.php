@@ -18,5 +18,10 @@
 
 namespace AryToNeX\RGBDuino\exceptions;
 
+/**
+ * Class TTYNotFoundException
+ * @package AryToNeX\RGBDuino\exceptions
+ */
 class TTYNotFoundException extends \Exception{
+
 }

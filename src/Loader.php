@@ -18,18 +18,18 @@
 
 // include color palette utils (color-extractor modified to work on php7)
 foreach(scandir(__DIR__ . "/AryToNeX/RGBDuino/color/") as $file)
-        if(pathinfo($file, PATHINFO_EXTENSION) == "php")
-            require_once __DIR__ . "/AryToNeX/RGBDuino/color/" . $file;
+	if(pathinfo($file, PATHINFO_EXTENSION) == "php")
+		require_once __DIR__ . "/AryToNeX/RGBDuino/color/" . $file;
 
 // include exceptions
 foreach(scandir(__DIR__ . "/AryToNeX/RGBDuino/exceptions/") as $file)
-        if(pathinfo($file, PATHINFO_EXTENSION) == "php")
-            require_once __DIR__ . "/AryToNeX/RGBDuino/exceptions/" . $file;
+	if(pathinfo($file, PATHINFO_EXTENSION) == "php")
+		require_once __DIR__ . "/AryToNeX/RGBDuino/exceptions/" . $file;
 
 // include libs
 foreach(scandir(__DIR__ . "/AryToNeX/RGBDuino/") as $file)
-    if(pathinfo($file, PATHINFO_EXTENSION) == "php" && $file !== "RGBDuino.php")
-        require_once __DIR__ . "/AryToNeX/RGBDuino/" . $file;
+	if(pathinfo($file, PATHINFO_EXTENSION) == "php" && $file !== "RGBDuino.php")
+		require_once __DIR__ . "/AryToNeX/RGBDuino/" . $file;
 
 // include main
 include_once __DIR__ . "/AryToNeX/RGBDuino/RGBDuino.php";
