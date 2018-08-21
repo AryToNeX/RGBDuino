@@ -16,6 +16,11 @@
  * limitations under the License.
  */
 
+// include arduino types
+foreach(scandir(__DIR__ . "/AryToNeX/RGBDuino/arduino/") as $file)
+	if(pathinfo($file, PATHINFO_EXTENSION) == "php")
+		require_once __DIR__ . "/AryToNeX/RGBDuino/arduino/" . $file;
+
 // include color palette utils (color-extractor modified to work on php7)
 foreach(scandir(__DIR__ . "/AryToNeX/RGBDuino/color/") as $file)
 	if(pathinfo($file, PATHINFO_EXTENSION) == "php")

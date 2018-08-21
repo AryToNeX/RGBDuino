@@ -16,51 +16,18 @@
  * limitations under the License.
  */
 
-namespace AryToNeX\RGBDuino;
-
-use AryToNeX\RGBDuino\exceptions\CannotOpenSerialConnectionException;
-use AryToNeX\RGBDuino\exceptions\NoArduinoConnectedException;
-use AryToNeX\RGBDuino\exceptions\TTYNotFoundException;
+namespace AryToNeX\RGBDuino\arduino;
 
 /**
  * Class Arduino
- *
- * @package AryToNeX\RGBDuino
+ * @package AryToNeX\RGBDuino\arduino
  */
-class Arduino{
+abstract class Arduino{
 
 	/** @var resource */
-	private $sock;
+	protected $stream;
 	/** @var string */
-	private $tty;
-
-	/**
-	 * @throws NoArduinoConnectedException
-	 * @throws TTYNotFoundException
-	 * @throws CannotOpenSerialConnectionException
-	 *
-	 * @param $tty string
-	 */
-	public function __construct(?string $tty = null){
-		exec("ls /dev/ | grep ttyUSB", $out);
-		if(empty($out)) throw new NoArduinoConnectedException("No Arduino devices found");
-
-		if(!isset($tty))
-			$this->tty = "/dev/" . $out[0];
-		else if(in_array($tty, $out))
-			$this->tty = "/dev/" . $tty;
-		else
-			throw new TTYNotFoundException("Defined TTY doesn't exist");
-
-		exec(
-			"stty -F " . $this->tty . " cs8 9600 ignbrk -brkint -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts"
-		);
-
-		$this->sock = fopen($this->tty, "w+");
-		if(!$this->sock) throw new CannotOpenSerialConnectionException("Can't establish serial connection");
-
-		sleep(1);
-	}
+	protected $tty;
 
 	/**
 	 * @param array $rgb
@@ -85,15 +52,18 @@ class Arduino{
 			"b" . str_pad(intval($b), 3, '0', STR_PAD_LEFT);
 
 		// WRITE
-		fwrite($this->sock, $color . "\n");
+		$this->sendData($color);
 	}
 
 	public function saveDisplayedColor() : void{
-		fwrite($this->sock, "save\n");
+		$this->sendData("save");
 	}
 
-	public function close() : void{
-		fclose($this->sock);
-	}
+	/**
+	 * @param string $data
+	 */
+	abstract protected function sendData(string $data) : void;
+
+	abstract public function close() : void;
 
 }

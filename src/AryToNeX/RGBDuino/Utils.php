@@ -205,4 +205,16 @@ class Utils{
 		}
 	}
 
+	// USB Arduino detection utils
+
+	/**
+	 * @return array
+	 */
+	public static function detectUSBArduino(){
+		// list USB serial ports
+		exec("ls /dev/ | grep ttyUSB", $out);
+
+		return $out;
+	}
+
 }

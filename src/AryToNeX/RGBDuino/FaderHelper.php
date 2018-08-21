@@ -48,10 +48,13 @@ class FaderHelper{
 			return;
 		}
 
+		$pool = $this->status->getArduinoPool()->toArray();
+
 		for($i = 0; $i <= 100; $i += $fadeMultiplier){
 			usleep(20000);
 			$mixedColor = color\Color::mixColors($this->status->getCurrentColor(), $rgb, $i);
-			$this->status->getArduino()->sendColor($mixedColor["r"], $mixedColor["g"], $mixedColor["b"]);
+			foreach($pool as $arduino)
+				$arduino->sendColor($mixedColor["r"], $mixedColor["g"], $mixedColor["b"]);
 
 			if(isset($shouldStop) and $shouldStop()){
 				$this->status->setCurrentColor($mixedColor);
@@ -59,7 +62,9 @@ class FaderHelper{
 				return;
 			}
 		}
-		$this->status->getArduino()->sendColor($rgb["r"], $rgb["g"], $rgb["b"]);
+
+		foreach($pool as $arduino)
+			$arduino->sendColor($rgb["r"], $rgb["g"], $rgb["b"]);
 		$this->status->setCurrentColor($rgb);
 	}
 
@@ -73,16 +78,20 @@ class FaderHelper{
 		if($this->status->getCurrentColor() === $rgb){
 			return;
 		}
+
 		$multiplier = 1;
 		$microseconds = ($seconds * 1000000) / 100;
 		if($microseconds < 20000){
 			$microseconds = 20000; // 2 millis
 			$multiplier = intval(2 / $seconds); // 2 millis multiplier
 		}
+		$pool = $this->status->getArduinoPool()->toArray();
+
 		for($i = 0; $i <= 100; $i += $multiplier){
 			usleep($microseconds);
 			$mixedColor = color\Color::mixColors($this->status->getCurrentColor(), $rgb, $i);
-			$this->status->getArduino()->sendColor($mixedColor["r"], $mixedColor["g"], $mixedColor["b"]);
+			foreach($pool as $arduino)
+				$arduino->sendColor($mixedColor["r"], $mixedColor["g"], $mixedColor["b"]);
 
 			if(isset($shouldStop) and $shouldStop()){
 				$this->status->setCurrentColor($mixedColor);
@@ -90,7 +99,9 @@ class FaderHelper{
 				return;
 			}
 		}
-		$this->status->getArduino()->sendColor($rgb["r"], $rgb["g"], $rgb["b"]);
+
+		foreach($pool as $arduino)
+			$arduino->sendColor($rgb["r"], $rgb["g"], $rgb["b"]);
 		$this->status->setCurrentColor($rgb);
 	}
 

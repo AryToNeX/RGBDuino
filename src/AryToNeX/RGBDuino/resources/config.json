@@ -17,5 +17,8 @@
     "0000FF",
     "FF00FF"
   ],
-  "tcpPort": 6969
+  "tcpPort": 6969,
+  "useUsb": true,
+  "useBluetooth": false,
+  "bluetooth": []
 }

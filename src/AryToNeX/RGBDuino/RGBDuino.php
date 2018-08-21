@@ -18,20 +18,32 @@
 
 namespace AryToNeX\RGBDuino;
 
-use AryToNeX\RGBDuino\exceptions\CannotOpenSerialConnectionException;
-use AryToNeX\RGBDuino\exceptions\NoArduinoConnectedException;
-use AryToNeX\RGBDuino\exceptions\TTYNotFoundException;
+use AryToNeX\RGBDuino\arduino\USBArduino;
+use AryToNeX\RGBDuino\arduino\BTArduino;
 
 cli_set_process_title("rgbduino-daemon");
 
-echo "Initializing Arduino connection...\n";
+$status = new Status();
+
+echo "Initializing Arduino connections...\n";
 $tries = 0;
 do{
 	$good = true;
 	try{
-		//$status = new Status(new FakeArduinoThatJustOutputsEverything()); // DEBUGGING FTW
-		$status = new Status(new Arduino());
-	}catch(NoArduinoConnectedException | CannotOpenSerialConnectionException | TTYNotFoundException $e){
+		if($status->getConfig()->getValue("useUsb") ?? true){
+			$serials = Utils::detectUSBArduino();
+			if(empty($serials)) throw new \Exception("No Arduino USB devices found");
+			foreach($serials as $serial)
+				$status->getArduinoPool()->add("USB-" . $serial, new USBArduino($serial));
+		}
+
+		if($status->getConfig()->getValue("useUsb") ?? false)
+			foreach($status->getConfig()->getValue("bluetooth") as $btd)
+				$status->getArduinoPool()->add("BT-" . $btd["identifier"], new BTArduino($btd["mac"]));
+
+		//$status->getArduinoPool()->add("FakeArduino", new arduino\FakeArduino()); //
+		// DEBUGGING FTW
+	}catch(\Exception $e){
 		echo "Exception: " . $e->getMessage() . " - Waiting 2 seconds...\n";
 		$status = null;
 		$good = false;
@@ -39,19 +51,23 @@ do{
 		sleep(2);
 	}
 }while(!$good && $tries < 5);
+
 if(!$good){
 	echo "Can't connect. Exiting...\n";
 	exec(
 		"zenity --error --ellipsize \
     --title=\"RGBDuino Error\" \
-    --text=\"RGBDuino can't connect to the LED strip because of an error and thus it stopped.\nPlease, unplug and replug your USB cable, then use the CLI utility 'rgbduino start' to start it again.\" \
+    --text=\"RGBDuino can't connect to the LED strip because of an error and thus it stopped.\nPlease restore your connections, then use the CLI utility 'rgbduino start' to start it again.\" \
     --ok-label=\"That's so sad, Alexa play Despacito\""
 	);
 	die;
 }
+
 unset($good);
 unset($tries);
-echo "Arduino connection established correctly!\n";
+
+// Started successfully!
+echo "Arduino connections established correctly!\n";
 exec(
 	"notify-send -u normal -i arduino \
 \"RGBDuino is started and working!\" \
@@ -69,14 +85,16 @@ pcntl_signal(
 );
 
 // start with default color
-$status->getArduino()->sendColorArray(
-	color\Color::fromHexToRgb($status->getConfig()->getValue("defaultColor") ?? "FFFFFF")
-);
+foreach($status->getArduinoPool()->toArray() as $arduino)
+	$arduino->sendColorArray(
+		color\Color::fromHexToRgb($status->getConfig()->getValue("defaultColor") ?? "FFFFFF")
+	);
 
 // save to EEPROM if config says yes
 if($status->getConfig()->getValue("saveDefaultColorToEEPROM") ?? false){
 	usleep(30000); // we need to keep calm and let the Arduino display the color first
-	$status->getArduino()->saveDisplayedColor();
+	foreach($status->getArduinoPool()->toArray() as $arduino)
+		$arduino->saveDisplayedColor();
 	usleep(30000); // then we need to relax a little more to let the Arduino save the color
 }
 
@@ -86,7 +104,8 @@ $doStuff = function() use ($status){
 	$status->getTcpManager()->doStuff();
 	if($status->getShouldExit() > 0){
 		$status->getTcpManager()->close();
-		$status->getArduino()->close();
+		foreach($status->getArduinoPool()->toArray() as $arduino)
+			$arduino->close();
 		if($status->getShouldExit() == 2){
 			echo "\n--------------------\n\n";
 			pcntl_exec($_SERVER["_"], $_SERVER["argv"]);

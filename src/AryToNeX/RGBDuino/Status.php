@@ -35,8 +35,8 @@ class Status{
 	private $wallpaperURL;
 	/** @var array */
 	private $wallpaperColor;
-	/** @var Arduino */
-	private $arduino;
+	/** @var ArduinoPool */
+	private $arduinoPool;
 	/** @var Config */
 	private $config;
 	/** @var PlayerStatus */
@@ -49,13 +49,12 @@ class Status{
 	/**
 	 * Status constructor.
 	 *
-	 * @param Arduino     $arduino
 	 * @param null|string $cfgpath
 	 */
-	public function __construct(Arduino $arduino, ?string $cfgpath = null){
+	public function __construct(?string $cfgpath = null){
 		$this->shouldExit = 0;
 		$this->config = new Config($cfgpath);
-		$this->arduino = $arduino;
+		$this->arduinoPool = new ArduinoPool();
 		$this->currentColor = color\Color::fromHexToRgb($this->config->getValue("defaultColor") ?? "FFFFFF");
 		$this->tcpManager = new TCPCommandsManager($this, $this->config->getValue("tcpPort") ?? 6969);
 
@@ -64,10 +63,10 @@ class Status{
 	}
 
 	/**
-	 * @return Arduino
+	 * @return ArduinoPool
 	 */
-	public function getArduino() : Arduino{
-		return $this->arduino;
+	public function getArduinoPool() : ArduinoPool{
+		return $this->arduinoPool;
 	}
 
 	/**
