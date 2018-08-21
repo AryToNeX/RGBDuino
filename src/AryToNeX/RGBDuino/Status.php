@@ -29,8 +29,12 @@ class Status{
 	private $currentColor;
 	/** @var array|null */
 	private $userChosenColor;
+	/** @var int */
+	private $showing; // -1 = just started, not showing anything, 0 = normal animations, 1 = music art
 	/** @var string */
 	private $wallpaperURL;
+	/** @var array */
+	private $wallpaperColor;
 	/** @var Arduino */
 	private $arduino;
 	/** @var Config */
@@ -95,6 +99,20 @@ class Status{
 	}
 
 	/**
+	 * @return int
+	 */
+	public function getShowing() : int{
+		return $this->showing ?? -1;
+	}
+
+	/**
+	 * @param int $showing
+	 */
+	public function setShowing(int $showing) : void{
+		$this->showing = $showing;
+	}
+
+	/**
 	 * @return Config
 	 */
 	public function getConfig() : Config{
@@ -133,6 +151,20 @@ class Status{
 	 * @return array
 	 */
 	public function getWallpaperColor() : array{
+		return $this->wallpaperColor;
+	}
+
+	/**
+	 * @param array $wallpaperColor
+	 */
+	public function setWallpaperColor(array $wallpaperColor) : void{
+		$this->wallpaperColor = $wallpaperColor;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function calculateWallpaperColor() : array{
 		return Utils::sanitizeColor(
 			Utils::dominantColorFromImage($this->getWallpaperURL()),
 			$this->config->getValue("minArtSaturation") ?? null,

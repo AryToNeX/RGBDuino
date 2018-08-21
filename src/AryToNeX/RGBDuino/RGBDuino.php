@@ -80,7 +80,6 @@ if($status->getConfig()->getValue("saveDefaultColorToEEPROM") ?? false){
 	usleep(30000); // then we need to relax a little more to let the Arduino save the color
 }
 
-$showing = -1; // -1 = just started, not showing anything, 0 = normal animations, 1 = music art
 if($status->getConfig()->getValue("animateArtColor") ?? true) $albumArtMediaArray = array();
 
 $doStuff = function() use ($status){
@@ -113,8 +112,8 @@ while(true){
 			){
 				// ok the player is playing and the song has an album art
 				if($status->getConfig()->getValue("animateArtColor") ?? true){
-					if($showing === -1 || $showing === 0) echo "Using animated art color\n";
-					$showing = 1;
+					if($status->getShowing() === -1 || $status->getShowing() === 0) echo "Using animated art color\n";
+					$status->setShowing(1);
 					if($oldURL !== $status->getPlayerStatus()->getArtURL() || empty($albumArtMediaArray)){
 						echo "Album art changed\n";
 						$albumArtMediaArray = $status->getPlayerStatus()->getAlbumArtColorArray();
@@ -160,9 +159,9 @@ while(true){
 						}
 					}
 				}else{
-					if($showing === 0 || $oldURL !== $status->getPlayerStatus()->getArtURL()){
-						if($showing === -1 || $showing === 0) echo "Using art color\n";
-						$showing = 1;
+					if($status->getShowing() === 0 || $oldURL !== $status->getPlayerStatus()->getArtURL()){
+						if($status->getShowing() === -1 || $status->getShowing() === 0) echo "Using art color\n";
+						$status->setShowing(1);
 						if($oldURL !== $status->getPlayerStatus()->getArtURL())
 							echo "Album art changed\n";
 
@@ -185,8 +184,8 @@ while(true){
 
 	// CHOSEN COLORS
 	if($status->getUserChosenColor() !== null){
-		if($showing === -1 || $showing === 1) echo "Using chosen color\n";
-		$showing = 0;
+		if($status->getShowing() === -1 || $status->getShowing() === 1) echo "Using chosen color\n";
+		$status->setShowing(0);
 		$fader->timedFadeTo(
 			$status->getUserChosenColor(),
 			$status->getConfig()->getValue("fadeSeconds") ?? 2,
@@ -212,8 +211,8 @@ while(true){
 
 	// COLOR CYCLE
 	if(($status->getConfig()->getValue("idleMode") ?? "color-cycle") == "color-cycle"){
-		if($showing === -1 || $showing === 1) echo "Using color cycling\n";
-		$showing = 0;
+		if($status->getShowing() === -1 || $status->getShowing() === 1) echo "Using color cycling\n";
+		$status->setShowing(0);
 		foreach(($status->getConfig()->getValue("cycleColors") ?? ["FFFFFF", "000000"]) as $hex){
 			$fader->timedFadeTo(
 				color\Color::fromHexToRgb($hex),
@@ -252,10 +251,14 @@ while(true){
 
 	// WALLPAPER COLOR
 	if(($status->getConfig()->getValue("idleMode") ?? "color-cycle") == "wallpaper"){
-		if($showing === -1 || $showing === 1) echo "Using wallpaper color\n";
-		$showing = 0;
-		if(Utils::getWallpaperURL() !== $status->getWallpaperURL())
+		if($status->getShowing() === -1 || $status->getShowing() === 1) echo "Using wallpaper color\n";
+		$status->setShowing(0);
+		if(Utils::getWallpaperURL() !== $status->getWallpaperURL()){
+			echo "Wallpaper changed; calculating new color\n";
 			$status->setWallpaperURL(Utils::getWallpaperURL());
+			$status->setWallpaperColor($status->calculateWallpaperColor());
+			echo "Wallpaper color calculated\n";
+		}
 		$fader->timedFadeTo(
 			$status->getWallpaperColor(),
 			$status->getConfig()->getValue("fadeSeconds") ?? 2,
@@ -281,8 +284,8 @@ while(true){
 
 	// THEN, DEFAULT
 	if(($status->getConfig()->getValue("idleMode") ?? "color-cycle") == "defaultColor"){
-		if($showing === -1 || $showing === 1) echo "Using default color\n";
-		$showing = 0;
+		if($status->getShowing() === -1 || $status->getShowing() === 1) echo "Using default color\n";
+		$status->setShowing(0);
 		$fader->timedFadeTo(
 			color\Color::fromHexToRgb($status->getConfig()->getValue("defaultColor") ?? "FFFFFF"),
 			$status->getConfig()->getValue("fadeSeconds") ?? 2,
