@@ -139,15 +139,16 @@ function helpMessage(){
 	echo "RGBDuino vINDEV - Help page
 
 Available commands:
-- help: this command, nothing to do
-- stop: Stops the daemon
-- kill: Kills the daemon (using kill9)
-        UNSAFE AS FUCK, DO NOT DO IT UNLESS REALLY NEEDED
-- restart: Restarts the daemon
-- setColor <hex>: Sets the color on the LED strip
-- saveColor: Saves the displayed color on the EEPROM
-- listPlayers: List the available players (equivalent of 'playerctl -l')
-- setPlayer <player>: Sets the music player for art animation 
+- help:               This command, nothing to do
+- stop:               Stops the daemon
+- kill:               Kills the daemon (using kill9)
+                      UNSAFE AS FUCK, DO NOT DO IT UNLESS REALLY NEEDED
+- restart:            Restarts the daemon
+- setColor <hex>:     Sets the color on the LED strip
+- saveColor:          Saves the displayed color on the EEPROM
+- listPlayers:        List the available players (equivalent of 'playerctl -l')
+- setPlayer <player>: Sets the music player for art animation
+- update:             Checks for updates, then downloads them and restarts the daemon
 ";
 }
 

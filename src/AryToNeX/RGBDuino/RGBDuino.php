@@ -113,7 +113,8 @@ while(true){
 			){
 				// ok the player is playing and the song has an album art
 				if($status->getConfig()->getValue("animateArtColor") ?? true){
-					if($showing === -1 || $showing !== 1) echo "Using animated art color\n";
+					if($showing === -1 || $showing === 0) echo "Using animated art color\n";
+					$showing = 1;
 					if($oldURL !== $status->getPlayerStatus()->getArtURL() || empty($albumArtMediaArray)){
 						echo "Album art changed\n";
 						$albumArtMediaArray = $status->getPlayerStatus()->getAlbumArtColorArray();
@@ -150,19 +151,18 @@ while(true){
 								$status->getPlayerStatus()->updateArtURL()
 							)
 						){
-							$showing = 0;
 							continue 2;
 						}
 						if($oldURL !== $status->getPlayerStatus()->getArtURL()){
 							echo "Album art changed\n";
 							$albumArtMediaArray = $status->getPlayerStatus()->getAlbumArtColorArray();
-							$showing = 1;
 							continue 2;
 						}
 					}
 				}else{
 					if($showing === 0 || $oldURL !== $status->getPlayerStatus()->getArtURL()){
 						if($showing === -1 || $showing === 0) echo "Using art color\n";
+						$showing = 1;
 						if($oldURL !== $status->getPlayerStatus()->getArtURL())
 							echo "Album art changed\n";
 
@@ -172,7 +172,6 @@ while(true){
 						);
 					}
 				}
-				$showing = 1;
 				continue;
 			}else{
 				if($status->getConfig()->getValue("animateArtColor") ?? true) $albumArtMediaArray = array();
@@ -187,6 +186,7 @@ while(true){
 	// CHOSEN COLORS
 	if($status->getUserChosenColor() !== null){
 		if($showing === -1 || $showing === 1) echo "Using chosen color\n";
+		$showing = 0;
 		$fader->timedFadeTo(
 			$status->getUserChosenColor(),
 			$status->getConfig()->getValue("fadeSeconds") ?? 2,
@@ -207,13 +207,13 @@ while(true){
 				return false;
 			}
 		);
-		$showing = 0;
 		continue;
 	}
 
 	// COLOR CYCLE
 	if(($status->getConfig()->getValue("idleMode") ?? "color-cycle") == "color-cycle"){
 		if($showing === -1 || $showing === 1) echo "Using color cycling\n";
+		$showing = 0;
 		foreach(($status->getConfig()->getValue("cycleColors") ?? ["FFFFFF", "000000"]) as $hex){
 			$fader->timedFadeTo(
 				color\Color::fromHexToRgb($hex),
@@ -242,7 +242,6 @@ while(true){
 				$status->getPlayerStatus()->isPlaying() &&
 				$status->getPlayerStatus()->updateArtURL()
 			){
-				$showing = 0;
 				continue 2;
 			}
 			// interrupt color cycling if custom color is set
@@ -251,60 +250,58 @@ while(true){
 		continue;
 	}
 
+	// WALLPAPER COLOR
 	if(($status->getConfig()->getValue("idleMode") ?? "color-cycle") == "wallpaper"){
-		if($showing === 1 || Utils::getWallpaperURL() !== $status->getWallpaperURL()){
-			echo "Using wallpaper color\n";
+		if($showing === -1 || $showing === 1) echo "Using wallpaper color\n";
+		$showing = 0;
+		if(Utils::getWallpaperURL() !== $status->getWallpaperURL())
 			$status->setWallpaperURL(Utils::getWallpaperURL());
-			$fader->timedFadeTo(
-				$status->getWallpaperColor(),
-				$status->getConfig()->getValue("fadeSeconds") ?? 2,
-				function() use ($status, $doStuff){
-					$doStuff(); // check networking
-					// check if music is playing
-					if(
-						$status->getPlayerStatus() !== null &&
-						$status->getPlayerStatus()->checkForPlayers() &&
-						$status->getPlayerStatus()->isPlaying() &&
-						$status->getPlayerStatus()->updateArtURL()
-					){
-						return true;
-					}
-					// check if custom color is set
-					if($status->getUserChosenColor() !== null) return true;
-
-					return false;
+		$fader->timedFadeTo(
+			$status->getWallpaperColor(),
+			$status->getConfig()->getValue("fadeSeconds") ?? 2,
+			function() use ($status, $doStuff){
+				$doStuff(); // check networking
+				// check if music is playing
+				if(
+					$status->getPlayerStatus() !== null &&
+					$status->getPlayerStatus()->checkForPlayers() &&
+					$status->getPlayerStatus()->isPlaying() &&
+					$status->getPlayerStatus()->updateArtURL()
+				){
+					return true;
 				}
-			);
-			$showing = 0;
-		}
+				// check if custom color is set
+				if($status->getUserChosenColor() !== null) return true;
+
+				return false;
+			}
+		);
 		continue;
 	}
 
 	// THEN, DEFAULT
 	if(($status->getConfig()->getValue("idleMode") ?? "color-cycle") == "defaultColor"){
-		if($showing === 1){
-			echo "Using default color\n";
-			$fader->timedFadeTo(
-				color\Color::fromHexToRgb($status->getConfig()->getValue("defaultColor") ?? "FFFFFF"),
-				$status->getConfig()->getValue("fadeSeconds") ?? 2,
-				function() use ($status, $doStuff){
-					$doStuff(); // check networking
-					// check if music is playing
-					if(
-						$status->getPlayerStatus() !== null &&
-						$status->getPlayerStatus()->checkForPlayers() &&
-						$status->getPlayerStatus()->isPlaying() &&
-						$status->getPlayerStatus()->updateArtURL()
-					){
-						return true;
-					}
-					// check if custom color is set
-					if($status->getUserChosenColor() !== null) return true;
-
-					return false;
+		if($showing === -1 || $showing === 1) echo "Using default color\n";
+		$showing = 0;
+		$fader->timedFadeTo(
+			color\Color::fromHexToRgb($status->getConfig()->getValue("defaultColor") ?? "FFFFFF"),
+			$status->getConfig()->getValue("fadeSeconds") ?? 2,
+			function() use ($status, $doStuff){
+				$doStuff(); // check networking
+				// check if music is playing
+				if(
+					$status->getPlayerStatus() !== null &&
+					$status->getPlayerStatus()->checkForPlayers() &&
+					$status->getPlayerStatus()->isPlaying() &&
+					$status->getPlayerStatus()->updateArtURL()
+				){
+					return true;
 				}
-			);
-			$showing = 0;
-		}
+				// check if custom color is set
+				if($status->getUserChosenColor() !== null) return true;
+
+				return false;
+			}
+		);
 	}
 }
