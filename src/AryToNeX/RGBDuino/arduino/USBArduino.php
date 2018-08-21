@@ -20,7 +20,7 @@ namespace AryToNeX\RGBDuino\arduino;
 
 use AryToNeX\RGBDuino\exceptions\CannotOpenSerialConnectionException;
 use AryToNeX\RGBDuino\exceptions\NoArduinoConnectedException;
-use AryToNeX\RGBDuino\exceptions\TTYNotFoundException;
+use AryToNeX\RGBDuino\exceptions\SerialPortNotFoundException;
 use AryToNeX\RGBDuino\Utils;
 
 /**
@@ -32,7 +32,7 @@ class USBArduino extends Arduino{
 
 	/**
 	 * @throws NoArduinoConnectedException
-	 * @throws TTYNotFoundException
+	 * @throws SerialPortNotFoundException
 	 * @throws CannotOpenSerialConnectionException
 	 *
 	 * @param $tty string
@@ -48,7 +48,7 @@ class USBArduino extends Arduino{
 			if(in_array($tty, $out))
 				$this->tty = "/dev/" . $tty;
 			else
-				throw new TTYNotFoundException("Defined TTY doesn't exist");
+				throw new SerialPortNotFoundException("Defined TTY doesn't exist");
 		else
 			// no port was passed via argument, default to first one
 			$this->tty = "/dev/" . $out[0];

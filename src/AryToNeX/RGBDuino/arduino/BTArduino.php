@@ -20,7 +20,9 @@ namespace AryToNeX\RGBDuino\arduino;
 
 use AryToNeX\RGBDuino\exceptions\CannotOpenSerialConnectionException;
 use AryToNeX\RGBDuino\exceptions\MalformedMACAddressException;
-use AryToNeX\RGBDuino\exceptions\TTYNotFoundException;
+use AryToNeX\RGBDuino\exceptions\RFCOMMPortExistsException;
+use AryToNeX\RGBDuino\exceptions\SerialPortNotFoundException;
+use AryToNeX\RGBDuino\Utils;
 
 /**
  * Class BTArduino
@@ -39,9 +41,10 @@ class BTArduino extends Arduino{
 	 *
 	 * @throws CannotOpenSerialConnectionException
 	 * @throws MalformedMACAddressException
-	 * @throws TTYNotFoundException
+	 * @throws SerialPortNotFoundException
+	 * @throws RFCOMMPortExistsException
 	 */
-	public function __construct(string $macAddress, int $rfcommPort = 0){
+	public function __construct(string $macAddress, ?int $rfcommPort = null){
 		// MAC ADDRESS SANITY CHECK
 		// it MUST be uppercase and formatted as XX:XX:XX:YY:YY:YY
 		$macAddress = strtoupper($macAddress);
@@ -53,13 +56,28 @@ class BTArduino extends Arduino{
 		// Save MAC address to object
 		$this->mac = $macAddress;
 
-		// Bind to /dev/rfcommN via rfcomm command
-		exec("rfcomm bind $rfcommPort $macAddress 1", $out, $status);
-		$this->tty = "/dev/rfcomm" . $rfcommPort;
+		$out = Utils::detectBluetoothArduino();
 
-		// double check for rfcomm serial ports
-		exec("ls /dev/ | grep rfcomm" . $rfcommPort, $out);
-		if(empty($out)) throw new TTYNotFoundException("Unable to find RFCOMM serial port");
+		// check if specified port was passed via argument
+		if(isset($rfcommPort))
+			// check if port already is bound to something
+			if(in_array("rfcomm" . $rfcommPort, $out))
+				throw new RFCOMMPortExistsException("Defined RFCOMM port is already bound to something");
+			else
+				// no port was passed via argument, default to the first free one
+				$rfcommPort = intval(
+						substr($out[count($out) - 1], -1)
+					) + 1;
+
+		// Bind to /dev/rfcommN via rfcomm command
+		exec("rfcomm bind $rfcommPort $this->mac 1", $out, $status);
+
+		// check if serial port opened correctly
+		$out = Utils::detectBluetoothArduino();
+		if(!in_array("rfcomm" . $rfcommPort, $out))
+			throw new SerialPortNotFoundException("Unable to find RFCOMM serial port after binding");
+
+		$this->tty = "/dev/rfcomm" . $rfcommPort;
 
 		// setup TTY
 		exec(

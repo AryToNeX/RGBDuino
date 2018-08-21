@@ -19,9 +19,9 @@
 namespace AryToNeX\RGBDuino\exceptions;
 
 /**
- * Class TTYNotFoundException
+ * Class RFCOMMPortExistsException
  * @package AryToNeX\RGBDuino\exceptions
  */
-class TTYNotFoundException extends \Exception{
+class RFCOMMPortExistsException extends \Exception{
 
 }

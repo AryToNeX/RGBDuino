@@ -205,7 +205,7 @@ class Utils{
 		}
 	}
 
-	// USB Arduino detection utils
+	// Arduino detection utils
 
 	/**
 	 * @return array
@@ -213,6 +213,16 @@ class Utils{
 	public static function detectUSBArduino(){
 		// list USB serial ports
 		exec("ls /dev/ | grep ttyUSB", $out);
+
+		return $out;
+	}
+
+	/**
+	 * @return array
+	 */
+	public static function detectBluetoothArduino(){
+		// list USB serial ports
+		exec("ls /dev/ | grep rfcomm", $out);
 
 		return $out;
 	}

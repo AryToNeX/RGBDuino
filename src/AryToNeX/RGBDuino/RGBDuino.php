@@ -37,9 +37,16 @@ do{
 				$status->getArduinoPool()->add("USB-" . $serial, new USBArduino($serial));
 		}
 
-		if($status->getConfig()->getValue("useUsb") ?? false)
+		if($status->getConfig()->getValue("useUsb") ?? false){
 			foreach($status->getConfig()->getValue("bluetooth") as $btd)
-				$status->getArduinoPool()->add("BT-" . $btd["identifier"], new BTArduino($btd["mac"]));
+				$status->getArduinoPool()->add(
+					"BT-" . $btd["identifier"],
+					new BTArduino(
+						$btd["mac"],
+						$btd["rfcommPort"] ?? null
+					)
+				);
+		}
 
 		//$status->getArduinoPool()->add("FakeArduino", new arduino\FakeArduino()); //
 		// DEBUGGING FTW

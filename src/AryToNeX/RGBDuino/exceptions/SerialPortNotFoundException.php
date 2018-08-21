@@ -19,9 +19,9 @@
 namespace AryToNeX\RGBDuino\exceptions;
 
 /**
- * Class MalformedMACAddressException
+ * Class SerialPortNotFoundException
  * @package AryToNeX\RGBDuino\exceptions
  */
-class MalformedMACAddressException extends \Exception{
+class SerialPortNotFoundException extends \Exception{
 
 }
