@@ -32,6 +32,8 @@ class Status{
 	/** @var int */
 	private $showing; // -1 = just started, not showing anything, 0 = normal animations, 1 = music art
 	/** @var string */
+	private $desktopEnv;
+	/** @var string */
 	private $wallpaperURL;
 	/** @var array */
 	private $wallpaperColor;
@@ -56,6 +58,7 @@ class Status{
 		$this->config = new Config($cfgpath);
 		$this->arduinoPool = new ArduinoPool();
 		$this->currentColor = color\Color::fromHexToRgb($this->config->getValue("defaultColor") ?? "FFFFFF");
+		$this->desktopEnv = Utils::getDesktopEnvironment();
 		$this->tcpManager = new TCPCommandsManager($this, $this->config->getValue("tcpPort") ?? 6969);
 
 		if(($this->config->getValue("useArtColorWhenPlayingMedia") ?? false) && !empty(exec("which playerctl")))
@@ -130,6 +133,13 @@ class Status{
 	 */
 	public function getTcpManager() : TCPCommandsManager{
 		return $this->tcpManager;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getDesktopEnv() : string{
+		return $this->desktopEnv;
 	}
 
 	/**

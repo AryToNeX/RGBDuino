@@ -183,8 +183,7 @@ class Utils{
 	/**
 	 * @return string
 	 */
-	public static function getWallpaperURL() : string{
-		$env = self::getDesktopEnvironment();
+	public static function getWallpaperURL(string $env) : string{
 		switch($env){
 			default:
 				echo "Unsupported DE $env!";

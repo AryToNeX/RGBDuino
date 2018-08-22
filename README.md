@@ -46,12 +46,59 @@ Now, take note of the modified string and go to the next section.
 This is simpler than the USB connection, but unlike that one, this MUST be done
 or you'll have to run the daemon as root (and it won't work properly).
 
-Take note of every bluetooth virtual port that you are going to use with
+Take note of every RFCOMM port that you'll use for your Arduino boards connected via
+Bluetooth. It's better if you hardcode them in the config file (since it can be done).
 
-```bash
-$ sudo nano /etc/udev/rules.d/99-blacklist-mm.rules
+For example, you have in your config file this situation:
+```json
+{
+  "useBluetooth": true,
+  "bluetooth": [
+    {
+      "mac": "XX:XX:XX:YY:YY:YY",
+      "identifier": "KitchenLights",
+      "rfcommPort": 0
+    },
+    {
+      "mac": "AA:AA:AA:BB:BB:BB",
+      "identifier": "LivingRoomLights",
+      "rfcommPort": 1
+    }
+  ]
+}
 ```
 
+In this case, take note of your `rfcommPort` values, `0` and `1`, and then write down
+these lines
+```
+KERNEL=="rfcomm0", ENV{ID_MM_DEVICE_IGNORE}="1"
+KERNEL=="rfcomm1", ENV{ID_MM_DEVICE_IGNORE}="1"
+```
+
+Note that the `0` and `1` are situated next to the `KERNEL=="rfcomm` part and right
+before the closing `"`.
+
+**Shortcut:** if you just don't care about using Bluetooth as broadband connection via
+`modemmanager` you can use a wildcard in the `udev` rule like so:
+
+```
+KERNEL=="rfcomm*", ENV{ID_MM_DEVICE_IGNORE}="1"
+```
+
+This will match ALL RFCOMM virtual ports and `modemmanager` will not probe them at all.
+
+### Setting up the `udev` rules
+
+This is fairly simple. All you should do is open a text editor like `nano` as root
+and create a file named `/etc/udev/rules.d/99-blacklist-mm.rules`; then put the
+strings you need there and save it.
+
+Now it's time to reload `udev`'s rules. In a terminal, run:
+```bash
+$ sudo udevadm control --reload-rules
+```
+
+And you should be all set (at least for now).
 
 ### This project
 
@@ -82,6 +129,110 @@ $ echo "#!/bin/bash
 
 php /home/$(whoami)/.local/share/RGBDuino/rgbduino \"\$@\"
 " | tee "/home/$(whoami)/.local/bin/rgbduino" 1> /dev/null
+```
+
+## Configuration file
+
+```json
+{
+  // The default color that will be displayed
+  // if idleMode is set to defaultColor or if you screw up things
+  "defaultColor": "FFFFFF",
+  
+  // This boolean saves the default color to EEPROM
+  // at every restart of the daemon. Use it carefully,
+  // it can be useful if you want only one color and you
+  // don't necessarily plug your Arduino to your PC everytime
+  "saveDefaultColorToEEPROM": false,
+  
+  // This is the main switch for the Media Cover Art color display.
+  // It requires Playerctl to be installed on your system.
+  "useArtColorWhenPlayingMedia": true,
+  
+  // This is the switch for the Media Cover Art animation.
+  // It consists in gradually changing colors which are in a palette
+  // generated against the Media Cover Art.
+  "animateArtColor": true,
+  
+  // Float value that goes from 0 to 1.
+  // This value regulates the minimum saturation for the Media Cover
+  // Art colors.
+  // Changing this will result in either white-ish or more colorful colors.
+  "minArtSaturation": 0.75,
+  
+  // Float value that goes from 0 to 1.
+  // This value regulates the minimum luminance for the Media Cover
+  // Art colors.
+  // Changing this will result in either darker or brighter colors.
+  "minArtLuminance": 0.50,
+  
+  // What to do when there's no music playing
+  // Possible values are: default-color, color-cycle, wallpaper.
+  "idleMode": "color-cycle",
+  
+  // Float value that goes from 0.002 to infinite (in seconds).
+  // How much should it take to fade to a chosen color or the wallpaper color?
+  // Note: it will not precisely take the specified amount of seconds
+  // unless you have a super-powered computer which can do maths literally instantly.
+  // Change this according to your needs and bring a chronometer to figure out how
+  // really slow it is.
+  "fadeSeconds": 2,
+  
+  // Float value that goes from 0.002 to infinite (in seconds).
+  // How much should it take to fade between colors in the Media Cover Art?
+  // Note: it will not precisely take the specified amount of seconds
+  // unless you have a super-powered computer which can do maths literally instantly.
+  // Change this according to your needs and bring a chronometer to figure out how
+  // really slow it is.
+  "artFadeSeconds": 5,
+  
+  // Float value that goes from 0.002 to infinite (in seconds).
+  // How much should it take to fade between the colors in the idle color cycle mode?
+  // Note: it will not precisely take the specified amount of seconds
+  // unless you have a super-powered computer which can do maths literally instantly.
+  // Change this according to your needs and bring a chronometer to figure out how
+  // really slow it is.
+  "cycleFadeSeconds": 10,
+  
+  // Array of HEX colors (as strings)
+  // Specify here which colors you prefer when cycling in idle mode.
+  // Defaults to the rainbow.
+  "cycleColors": [
+    "FF0000",
+    "FFFF00",
+    "00FF00",
+    "00FFFF",
+    "0000FF",
+    "FF00FF"
+  ],
+  
+  // Integer value, the TCP port the daemon will be listening on.
+  // It's needed for the CLI tool to work and it can be useful for you, if you
+  // want to connect to the daemon from the LAN to change colors and do stuff.
+  "tcpPort": 6969,
+  
+  // Do you want to use USB connection for your Arduino boards?
+  "useUsb": true,
+  
+  // Do you want to use Bluetooth connection for your Arduino boards?
+  "useBluetooth": false,
+  
+  // Array, list of your Bluetooth Arduino boards
+  "bluetooth": [
+    {
+      // the MAC address of your Bluetooth component
+      "mac": "XX:XX:XX:YY:YY:YY",
+      
+      // an identifier to remember which board is which,
+      // both here in the config file and there in the program itself
+      "identifier": "KitchenLights",
+      
+      // the RFCOMM port that will be used for this board
+      // Pro tip: choose a port that you don't already use for other things
+      "rfcommPort": 0
+    }
+  ]
+}
 ```
 
 ## Used libraries

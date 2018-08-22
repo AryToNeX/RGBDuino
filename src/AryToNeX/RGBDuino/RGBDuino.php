@@ -279,9 +279,9 @@ while(true){
 	if(($status->getConfig()->getValue("idleMode") ?? "color-cycle") == "wallpaper"){
 		if($status->getShowing() === -1 || $status->getShowing() === 1) echo "Using wallpaper color\n";
 		$status->setShowing(0);
-		if(Utils::getWallpaperURL() !== $status->getWallpaperURL()){
+		if(Utils::getWallpaperURL($status->getDesktopEnv()) !== $status->getWallpaperURL()){
 			echo "Wallpaper changed; calculating new color\n";
-			$status->setWallpaperURL(Utils::getWallpaperURL());
+			$status->setWallpaperURL(Utils::getWallpaperURL($status->getDesktopEnv()));
 			$status->setWallpaperColor($status->calculateWallpaperColor());
 			echo "Wallpaper color calculated\n";
 		}
@@ -309,7 +309,7 @@ while(true){
 	}
 
 	// THEN, DEFAULT
-	if(($status->getConfig()->getValue("idleMode") ?? "color-cycle") == "defaultColor"){
+	if(($status->getConfig()->getValue("idleMode") ?? "color-cycle") == "default-color"){
 		if($status->getShowing() === -1 || $status->getShowing() === 1) echo "Using default color\n";
 		$status->setShowing(0);
 		$fader->timedFadeTo(
