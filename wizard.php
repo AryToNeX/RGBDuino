@@ -19,6 +19,11 @@
 // Configuration wizard
 
 $data = array(
+	'baudRate'                    => 9600,
+	'useUsb'                      => true,
+	'useBluetooth'                => false,
+	'bluetooth'                   =>
+		array(),
 	'defaultColor'                => 'FFFFFF',
 	'saveDefaultColorToEEPROM'    => false,
 	'useArtColorWhenPlayingMedia' => true,
@@ -39,10 +44,6 @@ $data = array(
 			'FF00FF',
 		),
 	'tcpPort'                     => 6969,
-	'useUsb'                      => true,
-	'useBluetooth'                => false,
-	'bluetooth'                   =>
-		array(),
 );
 
 echo "Welcome to the RGBDuino configuration wizard!\n";

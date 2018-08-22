@@ -63,12 +63,13 @@ class Config{
 		$updated = false;
 		$current = json_decode(file_get_contents(__DIR__ . "/resources/config.json"), true);
 		foreach($current as $key => $value){
-			if(!isset($this->data[$key])){
-				$this->data[$key] = $value;
-				$updated = true;
-			}
+			if(isset($this->data[$key])) $current[$key] = $this->data[$key];
+			else $updated = true;
 		}
-		if($updated) file_put_contents($this->path, json_encode($this->data, JSON_PRETTY_PRINT));
+		if($updated){
+			$this->data = $current;
+			file_put_contents($this->path, json_encode($this->data, JSON_PRETTY_PRINT));
+		}
 	}
 
 }

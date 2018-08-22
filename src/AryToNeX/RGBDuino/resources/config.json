@@ -1,4 +1,8 @@
 {
+  "baudRate": 9600,
+  "useUsb": true,
+  "useBluetooth": false,
+  "bluetooth": [],
   "defaultColor": "FFFFFF",
   "saveDefaultColorToEEPROM": false,
   "useArtColorWhenPlayingMedia": true,
@@ -17,8 +21,5 @@
     "0000FF",
     "FF00FF"
   ],
-  "tcpPort": 6969,
-  "useUsb": true,
-  "useBluetooth": false,
-  "bluetooth": []
+  "tcpPort": 6969
 }

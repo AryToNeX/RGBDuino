@@ -37,7 +37,7 @@ class USBArduino extends Arduino{
 	 *
 	 * @param $tty string
 	 */
-	public function __construct(?string $tty = null){
+	public function __construct(?string $tty = null, int $baudRate = 9600){
 		// list USB serial ports
 		$out = Utils::detectUSBArduino();
 		if(empty($out)) throw new NoArduinoConnectedException("No Arduino devices found");
@@ -53,9 +53,9 @@ class USBArduino extends Arduino{
 			// no port was passed via argument, default to first one
 			$this->tty = "/dev/" . $out[0];
 
-		// setup TTY
+		// setup TTY according to Arduino IDE
 		exec(
-			"stty -F " . $this->tty . " cs8 9600 ignbrk -brkint -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts"
+			"stty -F " . $this->tty . " cs8 $baudRate -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke"
 		);
 
 		// open serial stream

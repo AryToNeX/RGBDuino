@@ -34,7 +34,10 @@ do{
 			$serials = Utils::detectUSBArduino();
 			if(empty($serials)) throw new \Exception("No Arduino USB devices found");
 			foreach($serials as $serial)
-				$status->getArduinoPool()->add("USB-" . $serial, new USBArduino($serial));
+				$status->getArduinoPool()->add(
+					"USB-" . $serial,
+					new USBArduino($serial, $status->getConfig()->getValue("baudRate") ?? 9600)
+				);
 		}
 
 		if($status->getConfig()->getValue("useUsb") ?? false){
@@ -43,7 +46,8 @@ do{
 					"BT-" . $btd["identifier"],
 					new BTArduino(
 						$btd["mac"],
-						$btd["rfcommPort"] ?? null
+						$btd["rfcommPort"] ?? null,
+						$status->getConfig()->getValue("baudRate") ?? 9600
 					)
 				);
 		}

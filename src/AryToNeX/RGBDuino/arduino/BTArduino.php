@@ -44,7 +44,7 @@ class BTArduino extends Arduino{
 	 * @throws SerialPortNotFoundException
 	 * @throws RFCOMMPortExistsException
 	 */
-	public function __construct(string $macAddress, ?int $rfcommPort = null){
+	public function __construct(string $macAddress, ?int $rfcommPort = null, int $baudRate = 9600){
 		// MAC ADDRESS SANITY CHECK
 		// it MUST be uppercase and formatted as XX:XX:XX:YY:YY:YY
 		$macAddress = strtoupper($macAddress);
@@ -79,9 +79,9 @@ class BTArduino extends Arduino{
 
 		$this->tty = "/dev/rfcomm" . $rfcommPort;
 
-		// setup TTY
+		// setup TTY according to Arduino IDE
 		exec(
-			"stty -F " . $this->tty . " cs8 9600 ignbrk -brkint -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts"
+			"stty -F " . $this->tty . " cs8 $baudRate -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke"
 		);
 
 		// open serial stream
