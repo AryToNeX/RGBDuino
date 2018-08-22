@@ -17,4 +17,6 @@ echo "#!/bin/bash
 php /home/$(whoami)/.local/share/RGBDuino/rgbduino \"\$@\"
 " | tee "/home/$(whoami)/.local/bin/rgbduino" 1> /dev/null
 
-echo "Installed correctly"
+wget -q -O- https://raw.githubusercontent.com/AryToNeX/RGBDuino/master/wizard.php | php
+
+echo "Installed correctly!"

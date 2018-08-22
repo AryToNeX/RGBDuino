@@ -6,9 +6,9 @@
   "minArtSaturation": 0.75,
   "minArtLuminance": 0.50,
   "idleMode": "color-cycle",
-  "fadeSeconds": 2,
-  "artFadeSeconds": 5,
-  "cycleFadeSeconds": 10,
+  "fadeSeconds": 1,
+  "artFadeSeconds": 2,
+  "cycleFadeSeconds": 5,
   "cycleColors": [
     "FF0000",
     "FFFF00",

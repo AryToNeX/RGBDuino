@@ -135,7 +135,7 @@ class Color{
 	 */
 	public static function fromHexToRgb(string $hex) : array{
 		$hex = strtolower(substr(str_replace("#", "", trim($hex)), 0, 6));
-		if(preg_match("/^[0-9a-f]+$/", $hex) !== 1) return array(
+		if(strlen($hex) !== 6 || preg_match("/^[0-9a-f]+$/", $hex) !== 1) return array(
 			"r" => 0,
 			"g" => 0,
 			"b" => 0,
