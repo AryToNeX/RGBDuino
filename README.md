@@ -113,7 +113,9 @@ and PHP (>= 7.1) with Sockets support.
 
 ### Using a packaged build (recommended)
 ```bash
-$ wget -q -O- https://raw.githubusercontent.com/AryToNeX/RGBDuino/master/install.sh | bash -s -
+$ wget -q -O install.sh https://raw.githubusercontent.com/AryToNeX/RGBDuino/master/install.sh
+$ chmod +x install.sh
+$ ./install.sh
 ```
 ### Build and install yourself
 ```bash

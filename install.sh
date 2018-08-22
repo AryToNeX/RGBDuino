@@ -18,6 +18,9 @@ echo "#!/bin/bash
 php /home/$(whoami)/.local/share/RGBDuino/rgbduino \"\$@\"
 " | tee "/home/$(whoami)/.local/bin/rgbduino" 1> /dev/null
 
+chmod +x "/home/$(whoami)/.local/share/RGBDuino/rgbduino"
+chmod +x "/home/$(whoami)/.local/bin/rgbduino"
+
 php "/home/$(whoami)/.local/share/RGBDuino/wizard.php"
 
 echo "Installed correctly!"
