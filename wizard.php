@@ -157,7 +157,7 @@ file_put_contents(
 function input(string $str = "") : string{
 	if(!empty($str)) echo $str . ": ";
 
-	return trim(fgets(STDIN));
+	return trim(fgets(fopen('php://stdin', 'r')));
 }
 
 function check_hex(string $hex) : bool{
