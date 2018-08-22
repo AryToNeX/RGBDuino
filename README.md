@@ -41,7 +41,7 @@ Replace them in this string:
 
 Now, take note of the modified string and go to the next section.
 
-### Dealing with it with a Bluetooth connection
+#### Dealing with it with a Bluetooth connection
 
 This is simpler than the USB connection, but unlike that one, this MUST be done
 or you'll have to run the daemon as root (and it won't work properly).
@@ -87,7 +87,7 @@ KERNEL=="rfcomm*", ENV{ID_MM_DEVICE_IGNORE}="1"
 
 This will match ALL RFCOMM virtual ports and `modemmanager` will not probe them at all.
 
-### Setting up the `udev` rules
+#### Setting up the `udev` rules
 
 This is fairly simple. All you should do is open a text editor like `nano` as root
 and create a file named `/etc/udev/rules.d/99-blacklist-mm.rules`; then put the
