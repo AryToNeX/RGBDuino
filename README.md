@@ -133,7 +133,7 @@ php /home/$(whoami)/.local/share/RGBDuino/rgbduino \"\$@\"
 
 ## Configuration file
 
-```json
+```json5
 {
   // The default color that will be displayed
   // if idleMode is set to defaultColor or if you screw up things
