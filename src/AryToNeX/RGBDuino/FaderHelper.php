@@ -18,6 +18,8 @@
 
 namespace AryToNeX\RGBDuino;
 
+use AryToNeX\RGBDuino\color\Color;
+
 /**
  * Class FaderHelper
  *
@@ -49,22 +51,22 @@ class FaderHelper{
 		}
 
 		$pool = $this->status->getArduinoPool()->toArray();
+		$shades = $this->getShades($this - $this->status->getCurrentColor(), $rgb);
 
 		for($i = 0; $i <= 100; $i += $fadeMultiplier){
 			usleep(20000);
-			$mixedColor = color\Color::mixColors($this->status->getCurrentColor(), $rgb, $i);
 			foreach($pool as $arduino)
-				$arduino->sendColor($mixedColor["r"], $mixedColor["g"], $mixedColor["b"]);
+				$arduino->sendColorArray($shades[$i]);
 
 			if(isset($shouldStop) and $shouldStop()){
-				$this->status->setCurrentColor($mixedColor);
+				$this->status->setCurrentColor($shades[$i]);
 
 				return;
 			}
 		}
 
 		foreach($pool as $arduino)
-			$arduino->sendColor($rgb["r"], $rgb["g"], $rgb["b"]);
+			$arduino->sendColorArray($rgb);
 		$this->status->setCurrentColor($rgb);
 	}
 
@@ -79,30 +81,82 @@ class FaderHelper{
 			return;
 		}
 
-		$multiplier = 1;
-		$microseconds = ($seconds * 1000000) / 100;
-		if($microseconds < 20000){
-			$microseconds = 20000; // 2 millis
-			$multiplier = intval(2 / $seconds); // 2 millis multiplier
-		}
 		$pool = $this->status->getArduinoPool()->toArray();
+		$shades = $this->adjustSteppedShades(
+			$this->mapShadesToSeconds(
+				$this->getShades($this->status->getCurrentColor(), $rgb),
+				$seconds
+			)
+		);
 
-		for($i = 0; $i <= 100; $i += $multiplier){
-			usleep($microseconds);
-			$mixedColor = color\Color::mixColors($this->status->getCurrentColor(), $rgb, $i);
+		$beginSec = microtime(true);
+		foreach($shades as $shade){
+			$nowSec = microtime(true) - $beginSec;
+
+			while($shade["time"] > $nowSec){
+				$nowSec = microtime(true) - $beginSec;
+				usleep(1);
+			}
+
 			foreach($pool as $arduino)
-				$arduino->sendColor($mixedColor["r"], $mixedColor["g"], $mixedColor["b"]);
+				$arduino->sendColorArray($shade["shade"]);
 
 			if(isset($shouldStop) and $shouldStop()){
-				$this->status->setCurrentColor($mixedColor);
+				$this->status->setCurrentColor($shade["shade"]);
 
 				return;
 			}
 		}
+		echo "Faded in total of " . (microtime(true) - $beginSec) . " seconds\n";
 
 		foreach($pool as $arduino)
-			$arduino->sendColor($rgb["r"], $rgb["g"], $rgb["b"]);
+			$arduino->sendColorArray($rgb);
 		$this->status->setCurrentColor($rgb);
+	}
+
+	/**
+	 * @param array $color1
+	 * @param array $color2
+	 *
+	 * @return array
+	 */
+	protected function getShades(array $color1, array $color2) : array{
+		$shades = array();
+		for($i = 0; $i <= 100; $i++) $shades[$i] = Color::mixColors($color1, $color2, $i);
+
+		return $shades;
+	}
+
+	/**
+	 * @param array $shades
+	 * @param float $seconds
+	 *
+	 * @return array
+	 */
+	protected function mapShadesToSeconds(array $shades, float $seconds) : array{
+		$secondStep = $seconds / 100;
+		$steppedShades = array();
+		foreach($shades as $i => $shade){
+			$steppedShades[] = ["time" => $secondStep * $i, "shade" => $shade];
+		}
+
+		return $steppedShades;
+	}
+
+	/**
+	 * @param array $steppedShades
+	 * @param float $minSeconds
+	 *
+	 * @return array
+	 */
+	protected function adjustSteppedShades(array $steppedShades, float $minSeconds = 0.00025) : array{
+		$lastTime = 0;
+		foreach($steppedShades as $i => $shade){
+			if($shade["time"] - $lastTime < $minSeconds) unset($steppedShades[$i]);
+			else $lastTime = $shade["time"];
+		}
+
+		return $steppedShades;
 	}
 
 }

@@ -139,6 +139,9 @@ $ chmod +x "/home/$(whoami)/.local/bin/rgbduino"
 
 ```json5
 {
+  // The baud rate of the serial connection
+  "baudRate": 9600,
+  
   // The default color that will be displayed
   // if idleMode is set to defaultColor or if you screw up things
   "defaultColor": "FFFFFF",

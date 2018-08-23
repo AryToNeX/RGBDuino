@@ -16,6 +16,7 @@ class Color{
 	 * @return array
 	 */
 	public static function mixColors(array $rgb1, array $rgb2, int $percentage) : array{
+		$percentage = ($percentage > 100 ? 100 : ($percentage < 0 ? 0 : $percentage));
 		$percentage = $percentage / 100;
 		$newRgb = array();
 		$newRgb["r"] = intval(round($rgb2["r"] * $percentage + $rgb1["r"] * (1 - $percentage)));

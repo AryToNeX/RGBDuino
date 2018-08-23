@@ -124,7 +124,7 @@ class Status{
 	/**
 	 * @return PlayerStatus
 	 */
-	public function getPlayerStatus() : PlayerStatus{
+	public function getPlayerStatus() : ?PlayerStatus{
 		return $this->playerStatus;
 	}
 
