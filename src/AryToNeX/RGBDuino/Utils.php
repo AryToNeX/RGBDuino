@@ -199,7 +199,7 @@ class Utils{
 			case "KDE5":
 				// command by @LucentW
 				return exec(
-					"grep /home/$(whoami)/.kde/share/config/plasma-overlay-appletsrc 'wallpaper=' | sed 's/wallpaper=//'"
+					"grep Image= /home/$(whoami)/.config/plasma-org.kde.plasma.desktop-appletsrc | sed 's/Image=file:\/\///'"
 				);
 		}
 	}
