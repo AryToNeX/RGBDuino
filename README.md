@@ -111,36 +111,73 @@ and PHP (>= 7.1) with Sockets support.
 
 ## Using the project
 
-### Using a packaged build (recommended)
+### Downloading prebuilt PHARs
 ```bash
-$ wget -q -O install.sh https://raw.githubusercontent.com/AryToNeX/RGBDuino/master/install.sh
-$ chmod +x install.sh
-$ ./install.sh
+$ mkdir RGBDuino && cd RGBDuino
+$ wget https://raw.githubusercontent.com/AryToNeX/RGBDuino/master/downloadPrebuilts.sh
+$ chmod +x downloadPrebuilts.sh
+$ ./downloadPrebuilts.sh
 ```
-### Build and install yourself
+
+### Building PHAR archives yourself
 ```bash
 $ git clone https://github.com/AryToNeX/RGBDuino
 $ cd RGBDuino
-$ php BuildPhar.php # note: for this to work you MUST set phar.readonly=Off on your php.ini
-$ mkdir ~/.local/share/RGBDuino
-$ cp rgbduino ~/.local/share/RGBDuino/rgbduino
-$ cp build/RGBDuino.phar ~/.local/share/RGBDuino/RGBDuino.phar
-
-  # create shortcut to CLI tool (tested on Ubuntu 18.04, might differ on other distros)
-$ echo "#!/bin/bash
-
-php /home/$(whoami)/.local/share/RGBDuino/rgbduino \"\$@\"
-" | tee "/home/$(whoami)/.local/bin/rgbduino" 1> /dev/null
-
-$ chmod +x "/home/$(whoami)/.local/bin/rgbduino"
+$ php BuildPhar.php
 ```
 
-## Configuration file
+### Server configuration
+```bash
+$ mkdir -p ~/.local/share/RGBDuino-Server
+$ cp build/RGBDuino-Server.phar ~/.local/share/RGBDuino-Server/RGBDuino-Server.phar
+$ cp build/current-build ~/.local/share/RGBDuino-Server/current-build
+```
+
+### Client configuration
+```bash
+$ mkdir -p ~/.local/share/RGBDuino-Client
+$ cp build/RGBDuino-Client.phar ~/.local/share/RGBDuino-Client/RGBDuino-Client.phar
+$ cp build/current-build ~/.local/share/RGBDuino-Client/current-build
+```
+
+### CLI configuration
+```bash
+$ mkdir -p ~/.local/share/RGBDuino-CLI
+$ cp build/RGBDuino-Client.phar ~/.local/share/RGBDuino-CLI/RGBDuino-CLI.phar
+$ cp build/current-build ~/.local/share/RGBDuino-CLI/current-build
+    # Local PATH on Ubuntu 18.04+, adapt these steps to your distro if you need to do so
+$ mkdir -p ~/.local/bin/
+$ cp build/rgbcli ~/.local/bin/rgbcli
+```
+
+## Server configuration file
 
 ```json5
 {
   // The baud rate of the serial connection
   "baudRate": 9600,
+  
+  // Do you want to use USB connection for your Arduino boards?
+  "useUsb": true,
+    
+  // Do you want to use Bluetooth connection for your Arduino boards?
+  "useBluetooth": false,
+    
+  // Array, list of your Bluetooth Arduino boards
+  "bluetooth": [
+    {
+      // the MAC address of your Bluetooth component
+      "mac": "XX:XX:XX:YY:YY:YY",
+      
+      // an identifier to remember which board is which,
+      // both here in the config file and there in the program itself
+      "identifier": "KitchenLights",
+        
+      // the RFCOMM port that will be used for this board
+      // Pro tip: choose a port that you don't already use for other things
+      "rfcommPort": 0
+    }
+  ],
   
   // The default color that will be displayed
   // if idleMode is set to defaultColor or if you screw up things
@@ -152,26 +189,8 @@ $ chmod +x "/home/$(whoami)/.local/bin/rgbduino"
   // don't necessarily plug your Arduino to your PC everytime
   "saveDefaultColorToEEPROM": false,
   
-  // This is the main switch for the Media Cover Art color display.
-  // It requires Playerctl to be installed on your system.
-  "useArtColorWhenPlayingMedia": true,
-  
-  // This is the switch for the Media Cover Art animation.
-  // It consists in gradually changing colors which are in a palette
-  // generated against the Media Cover Art.
-  "animateArtColor": true,
-  
-  // Float value that goes from 0 to 1.
-  // This value regulates the minimum saturation for the Media Cover
-  // Art colors.
-  // Changing this will result in either white-ish or more colorful colors.
-  "minArtSaturation": 0.75,
-  
-  // Float value that goes from 0 to 1.
-  // This value regulates the minimum luminance for the Media Cover
-  // Art colors.
-  // Changing this will result in either darker or brighter colors.
-  "minArtLuminance": 0.50,
+  // Should the server accept album art colors from client daemons?
+  "acceptAlbumArtColors": true,
   
   // What to do when there's no music playing
   // Possible values are: default-color, color-cycle, wallpaper.
@@ -216,29 +235,46 @@ $ chmod +x "/home/$(whoami)/.local/bin/rgbduino"
   // Integer value, the TCP port the daemon will be listening on.
   // It's needed for the CLI tool to work and it can be useful for you, if you
   // want to connect to the daemon from the LAN to change colors and do stuff.
-  "tcpPort": 6969,
+  "tcpPort": 6969
+}
+```
+
+## Client configuration file
+
+```json5
+{
+
+  // The server IP, this must be set correctly and respect the IPv4 or IPv6 scheme.
+  "serverIp": "0.0.0.0",
   
-  // Do you want to use USB connection for your Arduino boards?
-  "useUsb": true,
+  // The server port. Defaults to 6969. Change it if needed.
+  "serverPort": 6969,
   
-  // Do you want to use Bluetooth connection for your Arduino boards?
-  "useBluetooth": false,
+  // Should we send wallpaper color to the LED strips?
+  // Supported desktop environments:
+  // XFCE (tested)
+  // GNOME, Unity, Pantheon, KDE5 (untested)
+  "sendWallpaperColor": true,
   
-  // Array, list of your Bluetooth Arduino boards
-  "bluetooth": [
-    {
-      // the MAC address of your Bluetooth component
-      "mac": "XX:XX:XX:YY:YY:YY",
-      
-      // an identifier to remember which board is which,
-      // both here in the config file and there in the program itself
-      "identifier": "KitchenLights",
-      
-      // the RFCOMM port that will be used for this board
-      // Pro tip: choose a port that you don't already use for other things
-      "rfcommPort": 0
-    }
-  ]
+  // Sends the player status (album art colors)
+  // IT REQUIRES Playerctl TO BE INSTALLED ON YOUR SYSTEM.
+  "sendPlayerStatus": true,
+  
+  // Number of colors to extract from the album art
+  // Range from 1 to infinite, set this to 1 if you don't like animations.
+  "colorsToExtract": 5,
+  
+  // Float value that goes from 0 to 1.
+  // This value regulates the minimum saturation for the Media Cover
+  // Art colors.
+  // Changing this will result in either white-ish or more colorful colors.
+  "minArtSaturation": 0.75,
+    
+  // Float value that goes from 0 to 1.
+  // This value regulates the minimum luminance for the Media Cover
+  // Art colors.
+  // Changing this will result in either darker or brighter colors.
+  "minArtLuminance": 0.50
 }
 ```
 

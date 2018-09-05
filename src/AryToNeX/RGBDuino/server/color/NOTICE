@@ -1,0 +1,12 @@
+This library was slightly modified by me (Anthony Calabretta) to better
+suit my needs.
+However, if you are looking for the original library,
+it can be found at:
+
+    https://github.com/thephpleague/color-extractor
+
+What was modified:
+- No composer needed
+- The library namespace (I am noob and I feel comfortable having everything in a single namespace)
+- PHP7 additions (typehint everything and return hints)
+- the "Color" class (added a method for color mixing, added more conversion utils)

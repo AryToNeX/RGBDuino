@@ -18,15 +18,58 @@
 
 ini_set("phar.readonly", 0);
 
-$srcRoot = "src/";
-$buildRoot = "build/";
-$fileName = "RGBDuino.phar";
+@mkdir("build/");
 
-@mkdir($buildRoot);
-if(is_file($buildRoot . $fileName)) unlink($buildRoot . $fileName);
+// BUILD SERVER
+if(is_file("build/RGBDuino-Server.phar")) unlink("build/RGBDuino-Server.phar");
+$phar = new Phar("build/RGBDuino-Server.phar", null, "RGBDuino-Server.phar");
+$phar->buildFromIterator(
+	new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator(
+			"src/AryToNeX/RGBDuino/server",
+			RecursiveDirectoryIterator::SKIP_DOTS
+		)
+	),
+	"src/"
+);
+$phar->setStub($phar->createDefaultStub("AryToNeX/RGBDuino/server/Loader.php"));
 
-$phar = new Phar($buildRoot . $fileName, null, $fileName);
-$phar->buildFromDirectory($srcRoot);
-$phar->setStub($phar->createDefaultStub("Loader.php"));
+// BUILD CLIENT
+if(is_file("build/RGBDuino-Client.phar")) unlink("build/RGBDuino-Client.phar");
+$phar = new Phar("build/RGBDuino-Client.phar", null, "RGBDuino-Client.phar");
+$phar->buildFromIterator(
+	new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator(
+			"src/AryToNeX/RGBDuino/client",
+			RecursiveDirectoryIterator::SKIP_DOTS
+		)
+	),
+	"src/"
+);
+$phar->setStub($phar->createDefaultStub("AryToNeX/RGBDuino/client/Loader.php"));
 
-echo "Phar created.\n";
+// BUILD CLI
+if(is_file("build/RGBDuino-CLI.phar")) unlink("build/RGBDuino-CLI.phar");
+$phar = new Phar("build/RGBDuino-CLI.phar", null, "RGBDuino-CLI.phar");
+$phar->buildFromIterator(
+	new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator(
+			"src/AryToNeX/RGBDuino/cli",
+			RecursiveDirectoryIterator::SKIP_DOTS
+		)
+	),
+	"src/"
+);
+$phar->setStub($phar->createDefaultStub("AryToNeX/RGBDuino/cli/Loader.php"));
+
+file_put_contents("build/current-build", "from-source");
+file_put_contents(
+	"build/rgbcli",
+	"#!/bin/bash
+
+php /home/$(whoami)/.local/share/RGBDuino-CLI/RGBDuino-CLI.phar \"$@\"
+"
+);
+chmod("build/rgbcli", 0755);
+
+echo "PHAR archives successfully created.\n";
