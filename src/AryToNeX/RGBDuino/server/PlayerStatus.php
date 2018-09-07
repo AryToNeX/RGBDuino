@@ -37,7 +37,7 @@ class PlayerStatus{
 	/**
 	 * PlayerStatus constructor.
 	 *
-	 * @param Status    $owner
+	 * @param Status $owner
 	 */
 	public function __construct(Status $owner){
 		$this->owner = $owner;

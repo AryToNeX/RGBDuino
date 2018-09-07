@@ -8,29 +8,6 @@ namespace AryToNeX\RGBDuino\client;
  */
 class Utils{
 
-	// Color sanitizer for LED strip
-
-	/**
-	 * @param array $rgb
-	 * @param float $minSaturation
-	 * @param float $minLuminance
-	 *
-	 * @return array
-	 */
-	public static function sanitizeColor(array $rgb, float $minSaturation = 0.75, float $minLuminance = 0.50) : array{
-		if($rgb["r"] == $rgb["g"] && $rgb["g"] == $rgb["b"]) if($rgb["r"] > 64)
-			return array("r" => 255, "g" => 255, "b" => 255);
-		else
-			return array("r" => 0, "g" => 0, "b" => 0);
-
-		$hsv = color\Color::fromRgbToHsv($rgb);
-
-		$hsv["s"] = ($hsv["s"] < $minSaturation ? $minSaturation : $hsv["s"]);
-		$hsv["v"] = ($hsv["v"] < $minLuminance ? $minLuminance : $hsv["v"]);
-
-		return color\Color::fromHsvToRgb($hsv);
-	}
-
 	/**
 	 * @param string $url
 	 *
@@ -40,7 +17,7 @@ class Utils{
 		$palette = color\Palette::fromFilename($url);
 		$extractor = new color\ColorExtractor($palette);
 
-		return color\Color::fromIntToRgb($extractor->extract(1)[0]);
+		return color\ColorUtils::fromIntToRgb($extractor->extract(1)[0]);
 	}
 
 	/**
@@ -54,7 +31,7 @@ class Utils{
 		$extractor = new color\ColorExtractor($palette);
 		$colorsArr = $extractor->extract($colors);
 		for($i = 0; $i < count($colorsArr); $i++)
-			$colorsArr[$i] = color\Color::fromIntToRgb($colorsArr[$i]);
+			$colorsArr[$i] = color\ColorUtils::fromIntToRgb($colorsArr[$i]);
 
 		return $colorsArr;
 	}

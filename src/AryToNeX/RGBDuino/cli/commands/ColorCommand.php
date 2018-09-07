@@ -24,8 +24,8 @@ use AryToNeX\RGBDuino\cli\ServerCommunicator;
 class ColorCommand extends Command{
 
 	public const ALIAS = "color";
-	public const DESCRIPTION = "Save to EEPROM the displayed color; set a new color or unset it.";
-	public const USAGE = "color <hex|none|save> [ip] [port]";
+	public const DESCRIPTION = "Save to device memory the displayed color (where applicable);\nset a new color or unset it.";
+	public const USAGE = "color <hex|none|save> [global|identifier] [ip] [port]";
 
 	public function run(?array $arguments) : bool{
 		if(!isset($arguments[0])){
@@ -34,9 +34,11 @@ class ColorCommand extends Command{
 			return false;
 		}
 
+		if(!isset($arguments[1])) $arguments[1] = "global";
+
 		try{
-			if(isset($arguments[1]))
-				$srv = ServerCommunicator::fromIP($arguments[1], intval($arguments[2]) ?? 6969);
+			if(isset($arguments[2]))
+				$srv = ServerCommunicator::fromIP($arguments[2], intval($arguments[3]) ?? 6969);
 			else
 				$srv = ServerCommunicator::fromClientConfig();
 		}catch(MalformedIPException $e){
@@ -46,40 +48,40 @@ class ColorCommand extends Command{
 		}
 
 		if($arguments[0] == "save"){
-			$result = $srv->saveColor();
+			$result = $srv->saveColor($arguments[1]);
 
 			if($result){
-				echo "Color saved!\n";
+				echo "Color saved in device $arguments[1]!\n";
 
 				return true;
 			}
-			echo "Couldn't save the color. Perhaps the server is not online or it hanged.\n";
+			echo "Couldn't save the color. Perhaps you typed an unrecognized device or the server is not online or it hanged.\n";
 
 			return true;
 		}
 
 		if($arguments[0] == "none"){
-			$result = $srv->setColor(null);
+			$result = $srv->setColor(null, $arguments[1]);
 
 			if($result){
-				echo "Color unset!\n";
+				echo "Color unset in device $arguments[1]!\n";
 
 				return true;
 			}
-			echo "Couldn't unset the color. Perhaps the server is not online or it hanged.\n";
+			echo "Couldn't unset the color. Perhaps you typed an unrecognized device or the server is not online or it hanged.\n";
 
 			return true;
 		}
 
-		$result = $srv->setColor($arguments[0]);
+		$result = $srv->setColor($arguments[0], $arguments[1]);
 
 		if($result){
-			echo "Color set to $arguments[0]!\n";
+			echo "Color set to $arguments[0] in device $arguments[1]!\n";
 
 			return true;
 		}
 
-		echo "Couldn't set the color. Perhaps the server is offline or it hanged or your color hex is incorrect.\n";
+		echo "Couldn't set the color. Perhaps you typed an unrecognized device or the server is offline or it hanged or your color hex is incorrect.\n";
 
 		return false;
 	}

@@ -75,6 +75,8 @@ class Updater{
 	 * @return int
 	 */
 	protected function loadCurrentVersion() : int{
+		if(\Phar::running() === "") return -1; // non-packaged
+
 		$file = file_get_contents(
 			"/home/" . exec("whoami") . "/.local/share/RGBDuino-" . self::PRODUCT . "/current-build"
 		);

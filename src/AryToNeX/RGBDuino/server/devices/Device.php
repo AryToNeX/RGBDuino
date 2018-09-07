@@ -16,20 +16,20 @@
  * limitations under the License.
  */
 
-namespace AryToNeX\RGBDuino\server\arduino;
+namespace AryToNeX\RGBDuino\server\devices;
+
+use AryToNeX\RGBDuino\server\Color;
 
 /**
- * Class Arduino
- * @package AryToNeX\RGBDuino\server\arduino
+ * Class Device
+ * @package AryToNeX\RGBDuino\server\devices
  */
-abstract class Arduino{
+abstract class Device{
 
-	/** @var resource */
-	protected $stream;
-	/** @var string */
-	protected $tty;
 	/** @var bool */
 	protected $isActive;
+	/** @var Color */
+	protected $currentColor;
 
 	public function __construct(){
 		$this->isActive = true;
@@ -46,15 +46,25 @@ abstract class Arduino{
 	 * @param bool $isActive
 	 */
 	public function setActive(bool $isActive) : void{
-		if(!$isActive) $this->sendColor(0, 0, 0); // SHUT THE LEDs DOWN YEA
 		$this->isActive = $isActive;
+	}
+
+	/**
+	 * @return Color
+	 */
+	public function getCurrentColor() : Color{
+		return $this->currentColor;
+	}
+
+	public function sendColor(Color $color) : void{
+		$this->sendColorValues($color->getR(), $color->getG(), $color->getB());
 	}
 
 	/**
 	 * @param array $rgb
 	 */
 	public function sendColorArray(array $rgb) : void{
-		$this->sendColor($rgb["r"], $rgb["g"], $rgb["b"]);
+		$this->sendColorValues($rgb["r"], $rgb["g"], $rgb["b"]);
 	}
 
 	/**
@@ -62,23 +72,12 @@ abstract class Arduino{
 	 * @param $g
 	 * @param $b
 	 */
-	public function sendColor($r, $g, $b) : void{
-		$r = ($r < 0 ? 0 : ($r > 255 ? 255 : $r));
-		$g = ($g < 0 ? 0 : ($g > 255 ? 255 : $g));
-		$b = ($b < 0 ? 0 : ($b > 255 ? 255 : $b));
-
-		$color =
-			"r" . str_pad(intval($r), 3, '0', STR_PAD_LEFT) .
-			"g" . str_pad(intval($g), 3, '0', STR_PAD_LEFT) .
-			"b" . str_pad(intval($b), 3, '0', STR_PAD_LEFT);
-
-		// WRITE
-		$this->sendData($color);
+	public function sendColorValues($r, $g, $b) : void{
+		$this->currentColor = Color::fromArray(["r" => $r, "g" => $g, "b" => $b]);
+		// MUST EXTEND THIS AND CALL THE PARENT
 	}
 
-	public function saveDisplayedColor() : void{
-		$this->sendData("save");
-	}
+	abstract public function saveDisplayedColor() : void;
 
 	/**
 	 * @param string $data

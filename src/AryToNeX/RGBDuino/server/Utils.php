@@ -25,7 +25,7 @@ namespace AryToNeX\RGBDuino\server;
  */
 class Utils{
 
-	// Arduino detection utils
+	// Device detection utils
 
 	/**
 	 * @return array

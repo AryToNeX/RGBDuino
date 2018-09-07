@@ -65,14 +65,14 @@ class TCPCommandsManager{
 						echo "TCP: Custom color was not set\n";
 						break;
 					}
-					$this->owner->setUserChosenColor(color\Color::fromHexToRgb($str[0]));
+					$this->owner->setUserChosenColor(Color::fromHex($str[0]), $str[1] ?? null);
 					socket_write($accept, "COLOR_SET\n");
-					echo "TCP: Set custom color to {$str[0]}\n";
+					echo "TCP: Set custom color to {$str[0]} in device " . ($str[1] ?? "global") . "\n";
 					break;
 				case "unsetColor":
-					$this->owner->setUserChosenColor(null);
+					$this->owner->setUserChosenColor(null, $str[0] ?? null);
 					socket_write($accept, "COLOR_UNSET\n");
-					echo "TCP: Unset custom color\n";
+					echo "TCP: Unset custom color in device " . ($str[0] ?? "global") . "\n";
 					break;
 				case "setWallpaperColor":
 					if(!isset($str[0])){
@@ -80,7 +80,7 @@ class TCPCommandsManager{
 						echo "TCP: Wallpaper color was not set\n";
 						break;
 					}
-					$this->owner->setWallpaperColor(color\Color::fromHexToRgb($str[0]));
+					$this->owner->setWallpaperColor(Color::fromHex($str[0]));
 					$this->owner->setWallpaperChanged(true);
 					socket_write($accept, "WPCOLOR_SET\n");
 					echo "TCP: Set wallpaper color to {$str[0]}\n";
@@ -92,10 +92,19 @@ class TCPCommandsManager{
 					echo "TCP: Unset wallpaper color\n";
 					break;
 				case "saveColor":
-					foreach($this->owner->getArduinoPool()->toArray() as $arduino)
-						$arduino->saveDisplayedColor();
+					if(isset($str[0]) && $str[0] !== "global"){
+						if(is_null($this->owner->getDevicePool()->get($str[0]))){
+							socket_write($accept, "COLOR_SAVE_ERROR\n");
+							echo "TCP: Device $str[0] not found\n";
+							break;
+						}
+						$this->owner->getDevicePool()->get($str[0])->saveDisplayedColor();
+					}else{
+						foreach($this->owner->getDevicePool()->toArray() as $device)
+							$device->saveDisplayedColor();
+					}
 					socket_write($accept, "COLOR_SAVED\n");
-					echo "TCP: Color saved to EEPROM\n";
+					echo "TCP: Color of device " . ($str[0] ?? "global") . " saved\n";
 					break;
 				case "setPlayerDetails":
 					if($this->owner->getPlayerStatus() === null){
@@ -126,25 +135,35 @@ class TCPCommandsManager{
 					$this->owner->getPlayerStatus()->setArtURL($json["url"]);
 
 
-					if(isset($json["colors"])) $this->owner->getPlayerStatus()->setAlbumArtColorArray($json["colors"]);
-					else $this->owner->getPlayerStatus()->setAlbumArtColorArray(null);
+					if(isset($json["colors"]) && !empty($json["colors"])){
+						$colors = array();
+
+						foreach($json["colors"] as $rgb){
+							$colors[] = Color::fromArray($rgb);
+						}
+
+						$this->owner->getPlayerStatus()->setAlbumArtColorArray($colors);
+					}else $this->owner->getPlayerStatus()->setAlbumArtColorArray(null);
 					socket_write($accept, "PLAYER_DETAILS_SET\n");
 					echo "TCP: Player details updated\n";
 					break;
 				case "listDevices":
-					$devices = $this->owner->getArduinoPool()->toArray();
+					$devices = $this->owner->getDevicePool()->toArray();
 					$devJson = array();
-					foreach($devices as $id => $arduino)
+					foreach($devices as $id => $device)
 						try{
-							$reflection = new \ReflectionClass($arduino);
+							$reflection = new \ReflectionClass($device);
 						}catch(\ReflectionException $exception){
 							continue; // F for the object
 						}
 					$devJson[$id] = array(
-						"type" => $reflection->getShortName(),
-						"on"   => $arduino->isActive(),
+						"type"    => $reflection->getShortName(),
+						"on"      => $device->isActive(),
+						"current" => $device->getCurrentColor()->asHex(),
+						"chosen"  => ($this->owner->getUserChosenColor($id) === null ? null :
+							$this->owner->getUserChosenColor($id)->asHex()),
 					);
-					socket_write($accept, json_encode($devJson));
+					socket_write($accept, base64_encode(json_encode($devJson)));
 					echo "TCP: Devices list sent.";
 					break;
 				case "setDevice":
@@ -153,10 +172,10 @@ class TCPCommandsManager{
 						echo "TCP: Not enough arguments on setDevice\n";
 						break;
 					}
-					$arduino = $this->owner->getArduinoPool()->get($str[0], false);
-					if(!isset($arduino)){
+					$device = $this->owner->getDevicePool()->get($str[0], false);
+					if(!isset($device)){
 						socket_write($accept, "SETDEVICE_DEVICE_NOT_FOUND\n");
-						echo "TCP: Device not found\n";
+						echo "TCP: Device $str[0] not found\n";
 						break;
 					}
 					$state = strtolower($str[1]);
@@ -165,7 +184,7 @@ class TCPCommandsManager{
 						echo "TCP: Unrecognized switch $state for setDevice (device $str[0])\n";
 						break;
 					}
-					$arduino->setActive($state == "on" ? true : false);
+					$device->setActive($state == "on" ? true : false);
 					socket_write($accept, "SETDEVICE_SUCCESS\n");
 					echo "TCP: Device $str[0] set to $state\n";
 					break;

@@ -18,7 +18,7 @@
 
 namespace AryToNeX\RGBDuino\server;
 
-use AryToNeX\RGBDuino\server\color\Color;
+use AryToNeX\RGBDuino\server\color\ColorUtils;
 
 /**
  * Class FaderHelper
@@ -40,56 +40,100 @@ class FaderHelper{
 	}
 
 	/**
-	 * @param array         $rgb
-	 * @param int           $fadeMultiplier
+	 * @param Color         $color
 	 * @param callable|null $shouldStop
+	 * @param bool          $priority
 	 */
-	public function fadeTo(array $rgb, int $fadeMultiplier = 1, ?callable $shouldStop = null) : void{
+	public function fadeTo(Color $color, ?callable $shouldStop = null, bool $priority = false) : void{
 
-		if($this->status->getCurrentColor() === $rgb){
-			return;
-		}
+		$pool = $this->status->getDevicePool()->toArray();
 
-		$pool = $this->status->getArduinoPool()->toArray();
-		$shades = $this->getShades($this - $this->status->getCurrentColor(), $rgb);
+		foreach($pool as $id => $device){
+			if(!$device->isActive()){
+				unset($pool[$id]);
+				continue;
+			}
 
-		for($i = 0; $i <= 100; $i += $fadeMultiplier){
-			usleep(20000);
-			foreach($pool as $arduino)
-				if($arduino->isActive())
-					$arduino->sendColorArray($shades[$i]);
-
-			if(isset($shouldStop) and $shouldStop()){
-				$this->status->setCurrentColor($shades[$i]);
-
-				return;
+			$testColor = $color;
+			if(!$priority){
+				if(!is_null($this->status->getUserChosenColor($id))){
+					$testColor = $this->status->getUserChosenColor($id);
+				}
+			}
+			if($device->getCurrentColor()->equals($testColor)){
+				unset($pool[$id]);
 			}
 		}
+		if(empty($pool)) return;
 
-		foreach($pool as $arduino)
-			if($arduino->isActive())
-				$arduino->sendColorArray($rgb);
-		$this->status->setCurrentColor($rgb);
+		$shades = array();
+		foreach($pool as $id => $device){
+			if(!$priority){
+				if(!is_null($this->status->getUserChosenColor($id))){
+					$shades[$id] = $this->getShades($device->getCurrentColor(), $this->status->getUserChosenColor($id));
+					continue;
+				}
+			}
+			$shades[$id] = $this->getShades($device->getCurrentColor(), $color);
+		}
+
+		for($i = 0; $i <= 100; $i++){
+			usleep(20000);
+			foreach($pool as $id => $device)
+				$device->sendColor($shades[$id][$i]);
+
+			if(isset($shouldStop) and $shouldStop()) return;
+		}
 	}
 
 	/**
-	 * @param array         $rgb
+	 * @param Color         $color
 	 * @param float         $seconds
 	 * @param callable|null $shouldStop
+	 * @param bool          $priority
 	 */
-	public function timedFadeTo(array $rgb, float $seconds = 2, ?callable $shouldStop = null) : void{
+	public function timedFadeTo(Color $color,
+								float $seconds = 2,
+								?callable $shouldStop = null,
+								bool $priority =
+								false) : void{
 
-		if($this->status->getCurrentColor() === $rgb){
-			return;
+		$pool = $this->status->getDevicePool()->toArray();
+
+		foreach($pool as $id => $device){
+			if(!$device->isActive()){
+				unset($pool[$id]);
+				continue;
+			}
+
+			$testColor = $color;
+			if(!$priority){
+				if(!is_null($this->status->getUserChosenColor($id))){
+					$testColor = $this->status->getUserChosenColor($id);
+				}
+			}
+
+			if($device->getCurrentColor()->equals($testColor)){
+				unset($pool[$id]);
+			}
+		}
+		if(empty($pool)) return;
+
+		$shades = array();
+		$finishedColors = array();
+		foreach($pool as $id => $device){
+			if(!$priority){
+				if(!is_null($this->status->getUserChosenColor($id))){
+					$shades[$id] = $this->getShades($device->getCurrentColor(), $this->status->getUserChosenColor($id));
+					$finishedColors[$id] = $this->status->getUserChosenColor($id);
+					continue;
+				}
+			}
+			$shades[$id] = $this->getShades($device->getCurrentColor(), $color);
+			$finishedColors[$id] = $color;
 		}
 
-		$pool = $this->status->getArduinoPool()->toArray();
-		$shades = $this->adjustSteppedShades(
-			$this->mapShadesToSeconds(
-				$this->getShades($this->status->getCurrentColor(), $rgb),
-				$seconds
-			)
-		);
+		$shades = $this->mapShadesToSeconds($shades, $seconds);
 
 		$beginSec = microtime(true);
 		foreach($shades as $shade){
@@ -100,48 +144,49 @@ class FaderHelper{
 				usleep(1);
 			}
 
-			foreach($pool as $arduino)
-				if($arduino->isActive())
-					$arduino->sendColorArray($shade["shade"]);
+			foreach($pool as $id => $device)
+				$device->sendColor($shade["shade"][$id]);
 
-			if(isset($shouldStop) and $shouldStop()){
-				$this->status->setCurrentColor($shade["shade"]);
-
-				return;
-			}
+			if(isset($shouldStop) and $shouldStop()) return;
 		}
-		echo "Faded in total of " . (microtime(true) - $beginSec) . " seconds\n";
 
-		foreach($pool as $arduino)
-			if($arduino->isActive())
-				$arduino->sendColorArray($rgb);
-		$this->status->setCurrentColor($rgb);
+		foreach($pool as $id => $device)
+			$device->sendColor($finishedColors[$id]);
+
+		echo "Faded in total of " . (microtime(true) - $beginSec) . " seconds\n";
 	}
 
 	/**
-	 * @param array $color1
-	 * @param array $color2
+	 * @param Color $color1
+	 * @param Color $color2
 	 *
-	 * @return array
+	 * @return Color[]
 	 */
-	protected function getShades(array $color1, array $color2) : array{
+	protected function getShades(Color $color1, Color $color2) : array{
 		$shades = array();
-		for($i = 0; $i <= 100; $i++) $shades[$i] = Color::mixColors($color1, $color2, $i);
+		for($i = 0; $i <= 100; $i++)
+			$shades[$i] = Color::fromArray(ColorUtils::mixColors($color1->asArray(), $color2->asArray(), $i));
 
 		return $shades;
 	}
 
 	/**
-	 * @param array $shades
+	 * @param array $idShades
 	 * @param float $seconds
 	 *
-	 * @return array
+	 * @return Color[]
 	 */
-	protected function mapShadesToSeconds(array $shades, float $seconds) : array{
+	protected function mapShadesToSeconds(array $idShades, float $seconds) : array{
 		$secondStep = $seconds / 100;
 		$steppedShades = array();
-		foreach($shades as $i => $shade){
-			$steppedShades[] = ["time" => $secondStep * $i, "shade" => $shade];
+		for($i = 0; $i <= 100; $i++){
+			$steppedShade = array();
+			$steppedShade["time"] = $secondStep * $i;
+			$steppedShade["shade"] = array();
+			foreach($idShades as $id => $shades)
+				$steppedShade["shade"][$id] = $shades[$i];
+
+			$steppedShades[] = $steppedShade;
 		}
 
 		return $steppedShades;

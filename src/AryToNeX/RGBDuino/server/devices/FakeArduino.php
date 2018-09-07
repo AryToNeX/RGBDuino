@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-namespace AryToNeX\RGBDuino\server\arduino;
+namespace AryToNeX\RGBDuino\server\devices;
 
 /**
  * Class FakeArduino
- * @package AryToNeX\RGBDuino\server\arduino
+ * @package AryToNeX\RGBDuino\server\devices
  */
 class FakeArduino extends Arduino{
 

@@ -66,7 +66,7 @@ class Communicator{
 	 *
 	 * @return bool
 	 */
-	public function sendWallpaperColor(?array $color) : bool{
+	public function sendWallpaperColor(?Color $color) : bool{
 		try{
 			$sock = $this->createSock();
 		}catch(TCPSocketException $e){
@@ -82,7 +82,7 @@ class Communicator{
 			$sock,
 			[
 				"setWallpaperColor",
-				color\Color::fromRgbToHex($color),
+				$color->asHex(),
 			]
 		);
 		if($response === "WPCOLOR_SET") return true;

@@ -28,7 +28,7 @@ class PlayerDetails{
 	protected $isPlaying;
 	/** @var string */
 	protected $artUrl;
-	/** @var array */
+	/** @var Color[] */
 	protected $artColors;
 
 	/**
@@ -60,14 +60,14 @@ class PlayerDetails{
 	}
 
 	/**
-	 * @return null|array
+	 * @return null|Color[]
 	 */
 	public function getArtColors() : ?array{
 		return $this->artColors;
 	}
 
 	/**
-	 * @param null|array $artColors
+	 * @param null|Color[] $artColors
 	 */
 	public function setArtColors(?array $artColors) : void{
 		$this->artColors = $artColors;
@@ -92,10 +92,24 @@ class PlayerDetails{
 		$preHash = array(
 			"playing" => $this->isPlaying,
 			"url"     => $this->artUrl,
-			"colors"  => $this->artColors,
+			"colors"  => $this->colorsAsArray(),
 		);
 
 		return base64_encode(json_encode($preHash));
+	}
+
+	/**
+	 * @return array|null
+	 */
+	private function colorsAsArray() : ?array{
+		if(!isset($this->artColors) || empty($this->artColors)) return null;
+
+		$arr = array();
+		foreach($this->artColors as $color){
+			$arr[] = $color->asArray();
+		}
+
+		return $arr;
 	}
 
 }

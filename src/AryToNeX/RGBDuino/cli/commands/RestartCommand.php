@@ -71,7 +71,7 @@ class RestartCommand extends Command{
 					echo "There was an issue while restarting the client. Perhaps it was not running or you don't have permission to stop it.\n";
 				break;
 			default:
-				echo "Unrecognized argument $arguments[0]!";
+				echo "Unrecognized argument $arguments[0]!\n";
 
 				return false;
 		}

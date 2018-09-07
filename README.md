@@ -187,7 +187,7 @@ $ cp build/rgbcli ~/.local/bin/rgbcli
   // at every restart of the daemon. Use it carefully,
   // it can be useful if you want only one color and you
   // don't necessarily plug your Arduino to your PC everytime
-  "saveDefaultColorToEEPROM": false,
+  "saveDefaultColor": false,
   
   // Should the server accept album art colors from client daemons?
   "acceptAlbumArtColors": true,
@@ -197,28 +197,20 @@ $ cp build/rgbcli ~/.local/bin/rgbcli
   "idleMode": "color-cycle",
   
   // Float value that goes from 0.002 to infinite (in seconds).
-  // How much should it take to fade to a chosen color or the wallpaper color?
+  // How much should it take to fade to a normal static color?
   // Note: it will not precisely take the specified amount of seconds
   // unless you have a super-powered computer which can do maths literally instantly.
   // Change this according to your needs and bring a chronometer to figure out how
   // really slow it is.
-  "fadeSeconds": 2,
+  "normalFadeSeconds": 2,
   
   // Float value that goes from 0.002 to infinite (in seconds).
-  // How much should it take to fade between colors in the Media Cover Art?
+  // How much should it take to fade between colors when an animation is there?
   // Note: it will not precisely take the specified amount of seconds
   // unless you have a super-powered computer which can do maths literally instantly.
   // Change this according to your needs and bring a chronometer to figure out how
   // really slow it is.
-  "artFadeSeconds": 5,
-  
-  // Float value that goes from 0.002 to infinite (in seconds).
-  // How much should it take to fade between the colors in the idle color cycle mode?
-  // Note: it will not precisely take the specified amount of seconds
-  // unless you have a super-powered computer which can do maths literally instantly.
-  // Change this according to your needs and bring a chronometer to figure out how
-  // really slow it is.
-  "cycleFadeSeconds": 10,
+  "animationFadeSeconds": 10,
   
   // Array of HEX colors (as strings)
   // Specify here which colors you prefer when cycling in idle mode.

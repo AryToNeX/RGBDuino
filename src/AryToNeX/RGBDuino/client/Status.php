@@ -123,17 +123,20 @@ class Status{
 	/**
 	 * @param null|int $colors
 	 *
-	 * @return null|array
+	 * @return null|Color[]
 	 */
 	public function getAlbumArtColorArray(int $colors = 5) : ?array{
 		if($colors < 1) $colors = 1;
 		if($this->playerDetails->getAlbumArtURL() === null) return null;
 		$rgbArr = Utils::dominantColorArrayFromImage($this->playerDetails->getAlbumArtURL(), $colors);
-		foreach($rgbArr as $i => $rgb) $rgbArr[$i] = Utils::sanitizeColor(
-			$rgb,
-			$this->getConfig()->getValue("minArtSaturation") ?? null,
-			$this->getConfig()->getValue("minArtLuminance") ?? null
-		);
+		foreach($rgbArr as $i => $rgb){
+			$color = Color::fromArray($rgb);
+			$color->sanitize(
+				$this->getConfig()->getValue("minArtSaturation") ?? null,
+				$this->getConfig()->getValue("minArtLuminance") ?? null
+			);
+			$rgbArr[$i] = $color;
+		}
 
 		return $rgbArr;
 	}

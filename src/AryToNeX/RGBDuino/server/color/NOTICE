@@ -9,4 +9,4 @@ What was modified:
 - No composer needed
 - The library namespace (I am noob and I feel comfortable having everything in a single namespace)
 - PHP7 additions (typehint everything and return hints)
-- the "Color" class (added a method for color mixing, added more conversion utils)
+- the "Color" class (renamed to ColorUtils, added a method for color mixing, added more conversion utils)

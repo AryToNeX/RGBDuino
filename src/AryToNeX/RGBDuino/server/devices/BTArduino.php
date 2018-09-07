@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-namespace AryToNeX\RGBDuino\server\arduino;
+namespace AryToNeX\RGBDuino\server\devices;
 
 use AryToNeX\RGBDuino\server\exceptions\CannotOpenSerialConnectionException;
 use AryToNeX\RGBDuino\server\exceptions\MalformedMACAddressException;
@@ -26,7 +26,7 @@ use AryToNeX\RGBDuino\server\Utils;
 
 /**
  * Class BTArduino
- * @package AryToNeX\RGBDuino\server\arduino
+ * @package AryToNeX\RGBDuino\server\devices
  */
 class BTArduino extends Arduino{
 
@@ -38,6 +38,7 @@ class BTArduino extends Arduino{
 	 *
 	 * @param string $macAddress
 	 * @param int    $rfcommPort
+	 * @param int    $baudRate
 	 *
 	 * @throws CannotOpenSerialConnectionException
 	 * @throws MalformedMACAddressException

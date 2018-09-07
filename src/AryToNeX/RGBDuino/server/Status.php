@@ -25,18 +25,16 @@ namespace AryToNeX\RGBDuino\server;
  */
 class Status{
 
-	/** @var array */
-	private $currentColor;
-	/** @var array|null */
-	private $userChosenColor;
+	/** @var Color[]|null */
+	private $userChosenColorArray;
 	/** @var int */
 	private $showing; // -1 = just started, not showing anything, 0 = normal animations, 1 = music art
-	/** @var array */
+	/** @var Color */
 	private $wallpaperColor;
 	/** @var bool */
 	private $isWallpaperChanged;
-	/** @var ArduinoPool */
-	private $arduinoPool;
+	/** @var DevicePool */
+	private $devicePool;
 	/** @var Config */
 	private $config;
 	/** @var PlayerStatus */
@@ -52,10 +50,10 @@ class Status{
 	 * @param null|string $cfgpath
 	 */
 	public function __construct(?string $cfgpath = null){
+		$this->userChosenColorArray = array();
 		$this->shouldExit = 0;
 		$this->config = new Config($cfgpath);
-		$this->arduinoPool = new ArduinoPool();
-		$this->currentColor = color\Color::fromHexToRgb($this->config->getValue("defaultColor") ?? "FFFFFF");
+		$this->devicePool = new DevicePool();
 		$this->tcpManager = new TCPCommandsManager($this, $this->config->getValue("tcpPort") ?? 6969);
 
 		if($this->config->getValue("acceptAlbumArtColors") ?? false)
@@ -75,53 +73,69 @@ class Status{
 			true
 		);
 
+		if(!isset($values) || empty($values)) return;
+
 		$this->wallpaperColor = $values["wallColor"];
-		$this->userChosenColor = $values["chosenColor"];
+		$colorArr = array();
+		foreach($values["chosenColorArr"] as $id => $hex)
+			if(isset($hex))
+				$colorArr[$id] = Color::fromHex($hex);
+		$this->userChosenColorArray = $colorArr;
 		$this->isWallpaperChanged = true;
 	}
 
 	public function saveCacheValues() : void{
 		@mkdir("/home/" . exec("whoami") . "/.cache/RGBDuino", 0755, true);
+		$colorArr = array();
+		foreach($this->userChosenColorArray as $id => $color)
+			if(isset($color))
+				$colorArr[$id] = $color->asHex();
 		$values = array(
-			"wallColor"   => $this->wallpaperColor,
-			"chosenColor" => $this->userChosenColor,
+			"wallColor"      => $this->wallpaperColor,
+			"chosenColorArr" => $colorArr,
 		);
 		file_put_contents("/home/" . exec("whoami") . "/.cache/RGBDuino/status.json", json_encode($values));
 	}
 
 	/**
-	 * @return ArduinoPool
+	 * @return DevicePool
 	 */
-	public function getArduinoPool() : ArduinoPool{
-		return $this->arduinoPool;
+	public function getDevicePool() : DevicePool{
+		return $this->devicePool;
 	}
 
 	/**
-	 * @return array
+	 * @param null|string $identifier
+	 *
+	 * @return Color|null
 	 */
-	public function getCurrentColor() : array{
-		return $this->currentColor;
+	public function getUserChosenColor(?string $identifier = null) : ?Color{
+		if(isset($identifier)) return $this->userChosenColorArray[$identifier] ?? null;
+
+		return $this->userChosenColorArray["global"] ?? null;
 	}
 
 	/**
-	 * @param array $color
+	 * @return Color[]
 	 */
-	public function setCurrentColor(array $color) : void{
-		$this->currentColor = $color;
+	public function getUserChosenColorArray() : array{
+		return $this->userChosenColorArray;
 	}
 
 	/**
-	 * @return array|null
+	 * @param Color|null  $userChosenColor
+	 * @param null|string $identifier
 	 */
-	public function getUserChosenColor() : ?array{
-		return $this->userChosenColor;
+	public function setUserChosenColor(?Color $userChosenColor, ?string $identifier = null) : void{
+		if(isset($identifier)) $this->userChosenColorArray[$identifier] = $userChosenColor;
+		else $this->userChosenColorArray["global"] = $userChosenColor;
 	}
 
 	/**
-	 * @param array|null $userChosenColor
+	 * @param Color[] $userChosenColorArray
 	 */
-	public function setUserChosenColor(?array $userChosenColor) : void{
-		$this->userChosenColor = $userChosenColor;
+	public function setUserChosenColorArray(array $userChosenColorArray) : void{
+		$this->userChosenColorArray = $userChosenColorArray;
 	}
 
 	/**
@@ -160,16 +174,16 @@ class Status{
 	}
 
 	/**
-	 * @return array
+	 * @return Color
 	 */
-	public function getWallpaperColor() : ?array{
+	public function getWallpaperColor() : ?Color{
 		return $this->wallpaperColor;
 	}
 
 	/**
-	 * @param array $wallpaperColor
+	 * @param Color $wallpaperColor
 	 */
-	public function setWallpaperColor(?array $wallpaperColor) : void{
+	public function setWallpaperColor(?Color $wallpaperColor) : void{
 		$this->wallpaperColor = $wallpaperColor;
 	}
 

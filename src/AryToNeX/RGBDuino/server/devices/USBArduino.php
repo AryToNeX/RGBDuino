@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-namespace AryToNeX\RGBDuino\server\arduino;
+namespace AryToNeX\RGBDuino\server\devices;
 
 use AryToNeX\RGBDuino\server\exceptions\CannotOpenSerialConnectionException;
 use AryToNeX\RGBDuino\server\exceptions\NoArduinoConnectedException;
@@ -26,23 +26,24 @@ use AryToNeX\RGBDuino\server\Utils;
 /**
  * Class USBArduino
  *
- * @package AryToNeX\RGBDuino\server\arduino
+ * @package AryToNeX\RGBDuino\server\devices
  */
 class USBArduino extends Arduino{
 
 	/**
+	 * @param string $tty
+	 * @param int    $baudRate
+	 *
 	 * @throws NoArduinoConnectedException
 	 * @throws SerialPortNotFoundException
 	 * @throws CannotOpenSerialConnectionException
-	 *
-	 * @param $tty string
 	 */
 	public function __construct(?string $tty = null, int $baudRate = 9600){
 		parent::__construct();
 
 		// list USB serial ports
 		$out = Utils::detectUSBArduino();
-		if(empty($out)) throw new NoArduinoConnectedException("No Arduino devices found");
+		if(empty($out)) throw new NoArduinoConnectedException("No Device devices found");
 
 		// check if specified port was passed via argument
 		if(isset($tty))

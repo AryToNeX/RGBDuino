@@ -38,7 +38,9 @@ class HelpCommand extends Command{
 		$m .= "Usage: rgbcli <command> [arguments]\n";
 		$m .= "Commands:\n";
 		foreach($this->commandFactory->toArrayKV() as $cmd => $data)
-			$m .= "\t" . $cmd . ":\n\t\t" . $data["description"] . "\n\t\tUsage: " . $data["usage"] . "\n";
+			$m .= "\t" . $cmd . ":\n" .
+				"\t\t" . str_replace("\n", "\n\t\t", $data["description"]) . "\n" .
+				"\t\tUsage: " . $data["usage"] . "\n";
 		echo $m;
 
 		return true;

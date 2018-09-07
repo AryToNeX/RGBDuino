@@ -29,13 +29,13 @@ class SwitchCommand extends Command{
 
 	public function run(?array $arguments) : bool{
 		if(!isset($arguments[0])){
-			echo "You must specify a device identifier!";
+			echo "You must specify a device identifier!\n";
 
 			return false;
 		}
 
 		if(!isset($arguments[1])){
-			echo "You must specify a mode to set your device on!";
+			echo "You must specify a mode to set your device on!\n";
 
 			return false;
 		}

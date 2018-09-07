@@ -39,7 +39,7 @@ class DevicesCommand extends Command{
 	public function run(?array $arguments) : bool{
 		try{
 			if(isset($arguments[0]))
-				$srv = ServerCommunicator::fromIP($arguments[0], intval($arguments[1]) ?? 6969);
+				$srv = ServerCommunicator::fromIP($arguments[0], @intval($arguments[1]) ?? 6969);
 			else
 				$srv = ServerCommunicator::fromClientConfig();
 		}catch(MalformedIPException $e){
@@ -57,7 +57,11 @@ class DevicesCommand extends Command{
 
 		echo "List of devices:\n";
 		foreach($devices as $id => $data){
-			echo "\t" . $id . ":\n\t\tType: " . $data["type"] . "\n\t\tActive: " . ($data["on"] ? "Yes" : "No") . "\n";
+			echo "\t" . $id .
+				":\n\t\tType: " . $data["type"] .
+				"\n\t\tActive: " . ($data["on"] ? "Yes" : "No") .
+				"\n\t\tCurrent color: " . $data["current"] .
+				"\n\t\tChosen color: " . (is_null($data["chosen"]) ? "Not set" : $data["chosen"]) . "\n";
 		}
 
 		return true;

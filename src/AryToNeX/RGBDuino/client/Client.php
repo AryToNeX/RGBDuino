@@ -50,7 +50,7 @@ echo "Server is on!\n";
 // set empty player details
 $status->getPlayerDetails()->setPlaying(false);
 $status->getPlayerDetails()->setAlbumArtURL(null);
-$status->getPlayerDetails()->setArtColors(null);
+$status->getPlayerDetails()->setArtColors(array());
 $status->getCommunicator()->sendPlayerDetails($status->getPlayerDetails());
 
 while(true){
@@ -68,9 +68,8 @@ while(true){
 		$url = Utils::getWallpaperURL($status->getDeskEnv());
 		if($url !== $status->getCurrentWallpaperURL()){
 			echo "Wallpaper changed; computing color...\n";
-			$color = Utils::dominantColorFromImage($url);
-			$color = Utils::sanitizeColor(
-				$color,
+			$color = Color::fromArray(Utils::dominantColorFromImage($url));
+			$color->sanitize(
 				$status->getConfig()->getValue("minArtSaturation") ?? null,
 				$status->getConfig()->getValue("minArtLuminance") ?? null
 			);
@@ -106,13 +105,12 @@ while(true){
 
 		if(!$isPlaying){
 			$artUrl = null;
-			$artColors = null;
 		}
 
 		$status->getPlayerDetails()->setPlaying($isPlaying ?? false);
 		$status->getPlayerDetails()->setAlbumArtURL($artUrl ?? null);
 		$artColors = $status->getAlbumArtColorArray($status->getConfig()->getValue("colorsToExtract") ?? 5);
-		$status->getPlayerDetails()->setArtColors($artColors ?? null);
+		$status->getPlayerDetails()->setArtColors($artColors ?? array());
 
 		if($status->getPlayerDetails()->computeDiff($old)){
 			echo "Sending music info..\n";

@@ -18,23 +18,25 @@
 
 namespace AryToNeX\RGBDuino\server;
 
-use AryToNeX\RGBDuino\server\arduino\USBArduino;
-use AryToNeX\RGBDuino\server\arduino\BTArduino;
+use AryToNeX\RGBDuino\server\devices\USBArduino;
+use AryToNeX\RGBDuino\server\devices\BTArduino;
 
 cli_set_process_title("rgbduino-server");
 
 $status = new Status();
 
-echo "Initializing Arduino connections...\n";
+echo "Initializing device connections...\n";
 $tries = 0;
 do{
 	$good = true;
 	try{
+		// /*
+
 		if($status->getConfig()->getValue("useUsb") ?? true){
 			$serials = Utils::detectUSBArduino();
-			if(empty($serials)) throw new \Exception("No Arduino USB devices found");
+			if(empty($serials)) throw new \Exception("No Device USB devices found");
 			foreach($serials as $serial)
-				$status->getArduinoPool()->add(
+				$status->getDevicePool()->add(
 					"USB-" . $serial,
 					new USBArduino($serial, $status->getConfig()->getValue("baudRate") ?? 9600)
 				);
@@ -42,7 +44,7 @@ do{
 
 		if($status->getConfig()->getValue("useUsb") ?? false){
 			foreach($status->getConfig()->getValue("bluetooth") as $btd)
-				$status->getArduinoPool()->add(
+				$status->getDevicePool()->add(
 					"BT-" . $btd["identifier"],
 					new BTArduino(
 						$btd["mac"],
@@ -52,7 +54,9 @@ do{
 				);
 		}
 
-		//$status->getArduinoPool()->add("FakeArduino", new arduino\FakeArduino());
+		// */
+
+		//$status->getDevicePool()->add("FakeArduino", new devices\FakeArduino());
 		// DEBUGGING FTW
 	}catch(\Exception $e){
 		echo "Exception: " . $e->getMessage() . " - Waiting 2 seconds...\n";
@@ -77,7 +81,7 @@ unset($good);
 unset($tries);
 
 // Started successfully!
-echo "Arduino connections established correctly!\n";
+echo "Device connections established correctly!\n";
 exec(
 	"notify-send -u normal -i arduino \
 \"RGBDuino is started and working!\" \
@@ -95,17 +99,15 @@ pcntl_signal(
 );
 
 // start with default color
-foreach($status->getArduinoPool()->toArray() as $arduino)
-	$arduino->sendColorArray(
-		color\Color::fromHexToRgb($status->getConfig()->getValue("defaultColor") ?? "FFFFFF")
-	);
+foreach($status->getDevicePool()->toArray() as $device)
+	$device->sendColor(Color::fromHex($status->getConfig()->getValue("defaultColor") ?? "FFFFFF"));
 
 // save to EEPROM if config says yes
-if($status->getConfig()->getValue("saveDefaultColorToEEPROM") ?? false){
-	usleep(30000); // we need to keep calm and let the Arduino display the color first
-	foreach($status->getArduinoPool()->toArray() as $arduino)
-		$arduino->saveDisplayedColor();
-	usleep(30000); // then we need to relax a little more to let the Arduino save the color
+if($status->getConfig()->getValue("saveDefaultColor") ?? false){
+	usleep(30000); // we need to keep calm and let the Device display the color first
+	foreach($status->getDevicePool()->toArray() as $device)
+		$device->saveDisplayedColor();
+	usleep(30000); // then we need to relax a little more to let the Device save the color
 }
 
 $albumArtMediaArray = array();
@@ -114,8 +116,8 @@ $doStuff = function() use ($status){
 	$status->getTcpManager()->doStuff();
 	if($status->getShouldExit() > 0){
 		$status->getTcpManager()->close();
-		foreach($status->getArduinoPool()->toArray() as $arduino)
-			$arduino->close();
+		foreach($status->getDevicePool()->toArray() as $device)
+			$device->close();
 		$status->saveCacheValues();
 		if($status->getShouldExit() == 2){
 			echo "\n--------------------\n\n";
@@ -145,11 +147,11 @@ while(true){
 				echo "Album art changed\n";
 				$albumArtMediaArray = $status->getPlayerStatus()->getAlbumArtColorArray();
 			}
-			foreach($albumArtMediaArray as $rgb){
+			foreach($albumArtMediaArray as $color){
 				$oldURL = $status->getPlayerStatus()->getArtURL();
 				$fader->timedFadeTo(
-					$rgb,
-					$status->getConfig()->getValue("artFadeSeconds") ?? 2,
+					$color,
+					$status->getConfig()->getValue("animationFadeSeconds") ?? 5,
 					function() use ($oldURL, $status, $doStuff){
 						$doStuff(); // check networking
 						// interrupt color cycling if track is not playing or if track skipped
@@ -159,7 +161,8 @@ while(true){
 							return true;
 
 						return false;
-					}
+					},
+					$status->getConfig()->getValue("albumArtColorsOverChosenColors") ?? true
 				);
 				// interrupt color cycling if track is not playing or if track skipped
 				if(!$status->getPlayerStatus()->isPlaying())
@@ -179,11 +182,11 @@ while(true){
 
 	// CHOSEN COLORS
 	if($status->getUserChosenColor() !== null){
-		if($status->getShowing() === -1 || $status->getShowing() === 1) echo "Using chosen color\n";
+		if($status->getShowing() === -1 || $status->getShowing() === 1) echo "Using chosen global color\n";
 		$status->setShowing(0);
 		$fader->timedFadeTo(
 			$status->getUserChosenColor(),
-			$status->getConfig()->getValue("fadeSeconds") ?? 2,
+			$status->getConfig()->getValue("normalFadeSeconds") ?? 2,
 			function() use ($status, $doStuff){
 				$doStuff(); // check networking
 				// check if music is playing
@@ -208,8 +211,8 @@ while(true){
 		$status->setShowing(0);
 		foreach(($status->getConfig()->getValue("cycleColors") ?? ["FFFFFF", "000000"]) as $hex){
 			$fader->timedFadeTo(
-				color\Color::fromHexToRgb($hex),
-				$status->getConfig()->getValue("cycleFadeSeconds") ?? 2,
+				Color::fromHex($hex),
+				$status->getConfig()->getValue("animationFadeSeconds") ?? 5,
 				function() use ($status, $doStuff){
 					$doStuff(); // check networking
 					// check if music is playing
@@ -251,7 +254,7 @@ while(true){
 		}
 		$fader->timedFadeTo(
 			$status->getWallpaperColor(),
-			$status->getConfig()->getValue("fadeSeconds") ?? 2,
+			$status->getConfig()->getValue("normalFadeSeconds") ?? 2,
 			function() use ($status, $doStuff){
 				$doStuff(); // check networking
 				// check if music is playing
@@ -278,8 +281,8 @@ while(true){
 		if($status->getShowing() === -1 || $status->getShowing() === 1) echo "Using default color\n";
 		$status->setShowing(0);
 		$fader->timedFadeTo(
-			color\Color::fromHexToRgb($status->getConfig()->getValue("defaultColor") ?? "FFFFFF"),
-			$status->getConfig()->getValue("fadeSeconds") ?? 2,
+			Color::fromHex($status->getConfig()->getValue("defaultColor") ?? "FFFFFF"),
+			$status->getConfig()->getValue("normalFadeSeconds") ?? 2,
 			function() use ($status, $doStuff){
 				$doStuff(); // check networking
 				// check if music is playing

@@ -3,10 +3,10 @@
 namespace AryToNeX\RGBDuino\client\color;
 
 /**
- * Class Color
+ * Class ColorUtils
  * @package AryToNeX\RGBDuino\client\color
  */
-class Color{
+class ColorUtils{
 
 	/**
 	 * @param array $rgb1

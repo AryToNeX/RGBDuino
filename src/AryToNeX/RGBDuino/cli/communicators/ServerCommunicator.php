@@ -39,6 +39,12 @@ class ServerCommunicator{
 	 * @throws MalformedIPException
 	 */
 	public static function fromClientConfig(?string $cfgDir = null) : self{
+		if(!is_file(
+			$cfgDir ??
+			"/home/" . exec("whoami") . "/.local/share/RGBDuino-Client/config.json"
+		))
+			throw new MalformedIPException("Can't retrieve IP from config!"); // should change
+
 		$config = json_decode(
 			file_get_contents(
 				$cfgDir ??
@@ -117,9 +123,9 @@ class ServerCommunicator{
 			return null;
 		}
 
-		$response = self::writeCommand($sock, ["getDevices"]);
+		$response = self::writeCommand($sock, ["listDevices"]);
 
-		return json_decode($response, true);
+		return json_decode(base64_decode($response), true);
 	}
 
 	/**
@@ -132,7 +138,7 @@ class ServerCommunicator{
 		try{
 			$sock = $this->createSock();
 		}catch(TCPSocketException $e){
-			return null;
+			return false;
 		}
 
 		$response = self::writeCommand($sock, ["setDevice", $identifier, ($state === true ? "on" : "off")]);
@@ -149,7 +155,7 @@ class ServerCommunicator{
 		try{
 			$sock = $this->createSock();
 		}catch(TCPSocketException $e){
-			return null;
+			return false;
 		}
 
 		$response = self::writeCommand($sock, ["update"]);
@@ -161,10 +167,11 @@ class ServerCommunicator{
 
 	/**
 	 * @param null|string $hex
+	 * @param null|string $context
 	 *
 	 * @return bool
 	 */
-	public function setColor(?string $hex) : bool{
+	public function setColor(?string $hex, ?string $context) : bool{
 		try{
 			$sock = $this->createSock();
 		}catch(TCPSocketException $e){
@@ -172,29 +179,31 @@ class ServerCommunicator{
 		}
 
 		if(!isset($hex)){
-			$response = self::writeCommand($sock, ["unsetColor"]);
+			$response = self::writeCommand($sock, ["unsetColor", $context ?? "global"]);
 			if($response === "COLOR_UNSET") return true;
 
 			return false;
 		}
 
-		$response = self::writeCommand($sock, ["setColor", $hex]);
+		$response = self::writeCommand($sock, ["setColor", $hex, $context ?? "global"]);
 		if($response === "COLOR_SET") return true;
 
 		return false;
 	}
 
 	/**
+	 * @param string $context
+	 *
 	 * @return bool
 	 */
-	public function saveColor() : bool{
+	public function saveColor(?string $context = "global") : bool{
 		try{
 			$sock = $this->createSock();
 		}catch(TCPSocketException $e){
 			return false;
 		}
 
-		$response = self::writeCommand($sock, ["saveColor"]);
+		$response = self::writeCommand($sock, ["saveColor", $context]);
 		if($response === "COLOR_SAVED") return true;
 
 		return false;

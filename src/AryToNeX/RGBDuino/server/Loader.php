@@ -16,10 +16,11 @@
  * limitations under the License.
  */
 
-// include arduino types
-foreach(scandir(__DIR__ . "/arduino/") as $file)
+// include devices
+require_once __DIR__ . "/devices/Device.php";
+foreach(scandir(__DIR__ . "/devices/") as $file)
 	if(pathinfo($file, PATHINFO_EXTENSION) == "php")
-		require_once __DIR__ . "/arduino/" . $file;
+		require_once __DIR__ . "/devices/" . $file;
 
 // include color palette utils (color-extractor modified to work on php7)
 foreach(scandir(__DIR__ . "/color/") as $file)

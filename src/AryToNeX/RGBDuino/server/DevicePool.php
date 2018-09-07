@@ -18,26 +18,26 @@
 
 namespace AryToNeX\RGBDuino\server;
 
-use AryToNeX\RGBDuino\server\arduino\Arduino;
+use AryToNeX\RGBDuino\server\devices\Device;
 
 /**
- * Class ArduinoPool
+ * Class DevicePool
  * @package AryToNeX\RGBDuino\server
  */
-class ArduinoPool{
+class DevicePool{
 
-	/** @var Arduino[] */
+	/** @var Device[] */
 	private $pool = array();
 
 	/**
-	 * @param string  $identifier
-	 * @param Arduino $arduino
+	 * @param string $identifier
+	 * @param Device $device
 	 *
 	 * @return bool
 	 */
-	public function add(string $identifier, Arduino $arduino) : bool{
+	public function add(string $identifier, Device $device) : bool{
 		if(isset($this->pool[$identifier])) return false;
-		$this->pool[$identifier] = $arduino;
+		$this->pool[$identifier] = $device;
 
 		return true;
 	}
@@ -69,9 +69,9 @@ class ArduinoPool{
 	 * @param string $identifier
 	 * @param bool   $caseSensitive
 	 *
-	 * @return Arduino|null
+	 * @return Device|null
 	 */
-	public function get(string $identifier, bool $caseSensitive = true) : ?Arduino{
+	public function get(string $identifier, bool $caseSensitive = true) : ?Device{
 		if(!$caseSensitive){
 			$keys = array_keys($this->pool);
 			foreach($keys as $key){
@@ -88,27 +88,27 @@ class ArduinoPool{
 	/**
 	 * @param int $index
 	 *
-	 * @return Arduino|null
+	 * @return Device|null
 	 */
-	public function getByIndex(int $index) : ?Arduino{
+	public function getByIndex(int $index) : ?Device{
 		return array_values($this->pool)[$index] ?? null;
 	}
 
 	/**
-	 * @return Arduino|null
+	 * @return Device|null
 	 */
-	public function getFirst() : ?Arduino{
+	public function getFirst() : ?Device{
 		return $this->getByIndex(0);
 	}
 
 	/**
-	 * @param Arduino $arduino
+	 * @param Device $device
 	 *
 	 * @return null|string
 	 */
-	public function getIdentifier(Arduino $arduino) : ?string{
-		foreach($this->pool as $id => $ard){
-			if($arduino === $ard) return $id;
+	public function getIdentifier(Device $device) : ?string{
+		foreach($this->pool as $id => $dev){
+			if($device === $dev) return $id;
 		}
 
 		return null;
@@ -122,7 +122,7 @@ class ArduinoPool{
 	}
 
 	/**
-	 * @return Arduino[]
+	 * @return Device[]
 	 */
 	public function toArray() : array{
 		return $this->pool;

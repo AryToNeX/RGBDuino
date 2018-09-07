@@ -47,14 +47,11 @@ class UpdateCommand extends Command{
 
 		switch($arguments[0]){
 			case "all":
-				if(
-					$this->updateServer($arguments[1], intval($arguments[2])) ||
-					$this->updateClient() ||
-					$this->updateCLI()
-				)
-					return true;
+				@$this->updateServer($arguments[1] ?? null, intval($arguments[2]) ?? null);
+				$this->updateClient();
+				$this->updateCLI();
 
-				return false;
+				return true;
 				break;
 			case "cli":
 				if($this->updateCLI())
@@ -114,7 +111,7 @@ class UpdateCommand extends Command{
 		$result = ClientCommunicator::update();
 
 		if($result){
-			echo "Client updated!\n";
+			echo "Sent update signal to client!\n";
 
 			return true;
 		}

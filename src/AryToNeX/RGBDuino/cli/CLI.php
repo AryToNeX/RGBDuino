@@ -35,6 +35,12 @@ $cmd = array_shift($argv);
 // strtolower on all arguments
 $argv = array_filter($argv, 'strtolower');
 
+// check if command exists
+if($factory->getCommand($cmd) === null){
+	echo "Unknown command. Please run 'rgbcli help' to get a list of all available commands.\n";
+	exit(-1);
+}
+
 // pass it to the factory w/ error checking
 if(!$factory->getCommand($cmd)->run($argv)){
 	echo "Usage: " . $factory->getUsage($cmd) . "\n";
