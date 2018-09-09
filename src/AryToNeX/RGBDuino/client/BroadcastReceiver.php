@@ -54,32 +54,10 @@ class BroadcastReceiver{
 
 	public function receiveBroadcast(){
 		$msg = json_decode(self::socket_read($this->sock), true);
-		if(!empty($msg)){
-			if($msg["_"] == "rgbrecheck"){
-				$isClient = false;
-				foreach($this->networks as $network){
-					if($msg["lastclient"] === $network["ip"]){
-						$isClient = true;
-						break;
-					}
-				}
-
-				if($isClient){
-					$this->status->getCommunicator()->sendClientIsHere();
-					echo "Broadcast received from server; client is still here.\n";
-				}else
-					$this->tries++;
-
-				if($this->tries >= 5){
-					echo "Broadcast received from server; a client abandoned it, assuming it's safe to connect.\n";
-					if($this->connectToServer($msg["ip"], $msg["port"]))
-						$this->tries = 0;
-				}
-			}else{
+		if(!empty($msg) || (isset($msg["ip"]) && isset($msg["port"]))){
 				echo "Broadcast received from server; connecting...\n";
 				if($this->connectToServer($msg["ip"], $msg["port"]))
 					$this->tries = 0;
-			}
 		}
 	}
 

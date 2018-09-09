@@ -74,11 +74,11 @@ abstract class Device{
 	}
 
 	/**
-	 * @param $r
-	 * @param $g
-	 * @param $b
+	 * @param int $r
+	 * @param int $g
+	 * @param int $b
 	 */
-	public function sendColorValues($r, $g, $b) : void{
+	public function sendColorValues(int $r, int $g, int $b) : void{
 		$this->currentColor = Color::fromArray(["r" => $r, "g" => $g, "b" => $b]);
 		// MUST EXTEND THIS AND CALL THE PARENT
 	}

@@ -28,7 +28,7 @@ $tries = 0;
 do{
 	$good = true;
 	$discovery->checkConnected();
-	//$status->getDevicePool()->add("FakeArduino", new devices\FakeArduino());
+	$status->getDevicePool()->add("FakeArduino", new devices\FakeArduino());
 	// DEBUGGING FTW
 	if(empty($status->getDevicePool()->toArray())){
 		echo "No devices connected! Waiting 2 seconds...\n";
@@ -78,11 +78,11 @@ foreach(array_keys($status->getCycleColors()) as $key)
 
 $doStuff = function() use ($status){
 	// tcp commands
-	$status->getTcpManager()->doStuff();
+	$status->getTcpManager()->receiveAndProcessCommands();
 
 	// broadcasting
 	if($status->getBroadcast() !== null)
-		if($status->getConnectedClientStatus() !== 1 && $status->getBroadcast()->isTimeToBroadcast())
+		if($status->getConnectedClient() === null && $status->getBroadcast()->isTimeToBroadcast())
 			$status->getBroadcast()->broadcast();
 
 	// exit
@@ -115,7 +115,10 @@ while(true){
 			$status->getTcpManager()->getLastCommandTime() !== null &&
 			time() - $status->getTcpManager()->getLastCommandTime() > 3600
 		)
-			$status->setConnectedClientStatus(0);
+			if(!$status->getTcpManager()->pingClient()){
+				$status->setConnectedClient(null);
+				echo "Client is not here anymore\n";
+			}
 
 	// ANIMATIONS PART
 	if($status->getPlayerStatus() !== null){

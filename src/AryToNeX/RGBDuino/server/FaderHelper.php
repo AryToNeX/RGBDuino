@@ -66,13 +66,37 @@ class FaderHelper{
 		}
 		if(empty($pool)) return;
 
-		$shades = array();
+		// Smart lights exclusion from fading; use native fade instead
 		foreach($pool as $id => $device){
-			if(!$priority){
-				if(!is_null($this->status->getUserChosenColor($id))){
-					$shades[$id] = $this->getShades($device->getCurrentColor(), $this->status->getUserChosenColor($id));
+			if(method_exists($device, "sendFadeColorValues")){
+				if(!$priority && !is_null($this->status->getUserChosenColor($id))){
+					$device->sendFadeColorValues(
+						$this->status->getUserChosenColor($id)->getR(),
+						$this->status->getUserChosenColor($id)->getG(),
+						$this->status->getUserChosenColor($id)->getB(),
+						2000
+					);
+					unset($pool[$id]);
 					continue;
 				}
+
+				$color = $colors[$id] ?? $colors["global"];
+
+				$device->sendFadeColorValues(
+					$color->getR(),
+					$color->getG(),
+					$color->getB(),
+					2000
+				);
+				unset($pool[$id]);
+			}
+		}
+
+		$shades = array();
+		foreach($pool as $id => $device){
+			if(!$priority && !is_null($this->status->getUserChosenColor($id))){
+				$shades[$id] = $this->getShades($device->getCurrentColor(), $this->status->getUserChosenColor($id));
+				continue;
 			}
 
 			$shades[$id] = $this->getShades($device->getCurrentColor(), $colors[$id] ?? $colors["global"]);
@@ -119,6 +143,32 @@ class FaderHelper{
 			}
 		}
 		if(empty($pool)) return;
+
+		// Smart lights exclusion from fading; use native fade instead
+		foreach($pool as $id => $device){
+			if(method_exists($device, "sendFadeColorValues")){
+				if(!$priority && !is_null($this->status->getUserChosenColor($id))){
+					$device->sendFadeColorValues(
+						$this->status->getUserChosenColor($id)->getR(),
+						$this->status->getUserChosenColor($id)->getG(),
+						$this->status->getUserChosenColor($id)->getB(),
+						$seconds
+					);
+					unset($pool[$id]);
+					continue;
+				}
+
+				$color = $colors[$id] ?? $colors["global"];
+
+				$device->sendFadeColorValues(
+					$color->getR(),
+					$color->getG(),
+					$color->getB(),
+					$seconds
+				);
+				unset($pool[$id]);
+			}
+		}
 
 		$shades = array();
 		$finishedColors = array();

@@ -45,8 +45,8 @@ class Status{
 	private $tcpManager;
 	/** @var Broadcast */
 	private $broadcast;
-	/** @var array */
-	private $connectedClientStatus;
+	/** @var string */
+	private $connectedClient;
 	/** @var int */
 	private $shouldExit;
 
@@ -69,7 +69,7 @@ class Status{
 
 		if($this->config->getValue("useLocalDiscovery") ?? true){
 			$this->broadcast = new Broadcast($this, $this->config->getValue("discoveryPort") ?? 6969);
-			$this->connectedClientStatus = array("connected-client" => null, "status" => -1);
+			$this->connectedClient = null;
 		}
 
 		if($this->config->getValue("acceptAlbumArtColors") ?? false)
@@ -202,30 +202,14 @@ class Status{
 	 * @return null|string
 	 */
 	public function getConnectedClient() : ?string{
-		return $this->connectedClientStatus["connected-client"];
+		return $this->connectedClient;
 	}
 
 	/**
 	 * @param null|string $connectedClient
 	 */
 	public function setConnectedClient(?string $connectedClient) : void{
-		if(!isset($this->connectedClientStatus)) return;
-		$this->connectedClientStatus["connected-client"] = $connectedClient;
-	}
-
-	/**
-	 * @return int|null
-	 */
-	public function getConnectedClientStatus() : ?int{
-		return $this->connectedClientStatus["status"];
-	}
-
-	/**
-	 * @param int $status
-	 */
-	public function setConnectedClientStatus(int $status) : void{
-		if(!isset($this->connectedClientStatus)) return;
-		$this->connectedClientStatus["status"] = $status;
+		$this->connectedClient = $connectedClient;
 	}
 
 	/**

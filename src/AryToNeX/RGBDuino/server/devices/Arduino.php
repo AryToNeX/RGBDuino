@@ -35,11 +35,11 @@ abstract class Arduino extends Device{
 	}
 
 	/**
-	 * @param $r
-	 * @param $g
-	 * @param $b
+	 * @param int $r
+	 * @param int $g
+	 * @param int $b
 	 */
-	public function sendColorValues($r, $g, $b) : void{
+	public function sendColorValues(int $r, int $g, int $b) : void{
 		parent::sendColorValues($r, $g, $b);
 
 		$r = ($r < 0 ? 0 : ($r > 255 ? 255 : $r));

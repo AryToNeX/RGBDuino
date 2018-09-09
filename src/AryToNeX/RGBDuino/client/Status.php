@@ -33,6 +33,8 @@ class Status{
 	protected $broadcastReceiver;
 	/** @var Communicator */
 	protected $communicator;
+	/** @var TCPClientManager */
+	protected $tcpClientManager;
 	/** @var PlayerDetails */
 	protected $playerDetails;
 	/** @var MiniPlayerCtl */
@@ -65,6 +67,11 @@ class Status{
 			$this->communicator = null;
 		}
 
+		$this->tcpClientManager = new TCPClientManager(
+			$this,
+			($this->config->getValue("serverPort") ?? 6969) + 1
+		);
+
 		if($this->config->getValue("sendPlayerStatus") ?? true && !empty(exec("which playerctl"))){
 			echo "Player details are active!\n";
 			$this->playerDetails = new PlayerDetails();
@@ -96,6 +103,13 @@ class Status{
 	 */
 	public function getCommunicator() : ?Communicator{
 		return $this->communicator;
+	}
+
+	/**
+	 * @return TCPClientManager
+	 */
+	public function getTcpClientManager() : TCPClientManager{
+		return $this->tcpClientManager;
 	}
 
 	/**

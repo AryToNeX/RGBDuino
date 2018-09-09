@@ -81,11 +81,6 @@ class Broadcast{
 				"port" => $this->status->getTcpManager()->getPort(),
 			);
 
-			if($this->status->getConnectedClientStatus() === 0){
-				$msg["_"] = "rgbrecheck";
-				$msg["lastclient"] = $this->status->getConnectedClient();
-			}
-
 			$msg = json_encode($msg);
 			socket_sendto($this->sock, $msg, strlen($msg), 0, $broadcastIP, $this->port);
 		}

@@ -65,7 +65,7 @@ class TCPCommandsManager{
 		return $this->lastCommandTime;
 	}
 
-	public function doStuff() : void{
+	public function receiveAndProcessCommands() : void{
 		$accept = socket_accept($this->sock);
 		if(is_resource($accept)){
 			// let's do some stuff yay
@@ -230,15 +230,12 @@ class TCPCommandsManager{
 					}
 					break;
 				case "clientIsHere":
-					socket_getpeername($accept, $ip);
 					$this->owner->setConnectedClient($ip);
-					$this->owner->setConnectedClientStatus(1);
 					socket_write($accept, "CLIENT_IS_HERE_RECEIVED\n");
 					echo "TCP: Client is here\n";
 					break;
 				case "clientIsLeaving":
 					$this->owner->setConnectedClient(null);
-					$this->owner->setConnectedClientStatus(-1);
 					socket_write($accept, "CLIENT_IS_LEAVING_RECEIVED\n");
 					echo "TCP: Client left\n";
 					break;
@@ -249,9 +246,32 @@ class TCPCommandsManager{
 			}
 			if(implode(" ", $str) !== "") socket_shutdown($accept, 2);
 			socket_close($accept);
-			$this->lastCommandTime = time();
+			if($this->owner->getConnectedClient() !== null && $ip === $this->owner->getConnectedClient())
+				$this->lastCommandTime = time();
+
 			echo "TCP: Connection from $ip:$port closed.\n";
 		}
+	}
+
+	public function pingClient() : bool{
+		if($this->owner->getConnectedClient() === null) return false;
+
+		if(!$sock = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP))
+			return false;
+		if(!@socket_connect($sock, $this->owner->getConnectedClient(), $this->port + 1))
+			return false;
+
+		socket_write($sock, "ping\n");
+		$str = self::socket_read_until($sock, "\n");
+		socket_close($sock);
+
+		if($str === "PONG"){
+			$this->lastCommandTime = time();
+
+			return true;
+		}
+
+		return false;
 	}
 
 	public function close() : void{

@@ -52,10 +52,12 @@ if($status->getCommunicator() === null){
 
 		if($tries >= 5){
 			echo "Exiting...\n";
+			$status->getTcpClientManager()->closeClient();
 			exit(0);
 		}
 	}else{
 		echo "Exiting...\n";
+		$status->getTcpClientManager()->closeClient();
 		exit(0);
 	}
 }
@@ -69,6 +71,8 @@ $status->getCommunicator()->sendPlayerDetails($status->getPlayerDetails());
 while(true){
 	// check if we should exit
 	if($status->getShouldExit() > 0){
+		$status->getTcpClientManager()->closeClient();
+
 		if($status->getCommunicator() !== null)
 			$status->getCommunicator()->sendClientIsLeaving();
 
@@ -79,6 +83,9 @@ while(true){
 		echo "Exiting...\n";
 		exit(0);
 	}
+
+	// listen and process TCP commands
+	$status->getTcpClientManager()->listenToClientCommands();
 
 	// check if we should rediscover the server
 	if($status->getCommunicator() === null){
@@ -199,5 +206,5 @@ while(true){
 		unset($old);
 	}
 
-	sleep(2);
+	sleep(1); // this one really is to keep a cycle a second and not make a lot of CPU leak.
 }

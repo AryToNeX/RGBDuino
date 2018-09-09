@@ -84,11 +84,11 @@ class Yeelight extends Device{
 	}
 
 	/**
-	 * @param $r
-	 * @param $g
-	 * @param $b
+	 * @param int $r
+	 * @param int $g
+	 * @param int $b
 	 */
-	public function sendColorValues($r, $g, $b) : void{
+	public function sendColorValues(int $r, int $g, int $b) : void{
 		parent::sendColorValues($r, $g, $b);
 		$val = array(
 			"id"     => 1,
@@ -103,6 +103,16 @@ class Yeelight extends Device{
 			"id"     => 1,
 			"method" => "set_default",
 			"params" => [],
+		);
+		$this->sendData(json_encode($val));
+	}
+
+	public function sendFadeColorValues(int $r, int $g, int $b, float $seconds){
+		parent::sendColorValues($r, $g, $b);
+		$val = array(
+			"id"     => 1,
+			"method" => "set_rgb",
+			"params" => [ColorUtils::fromRgbToInt(["r" => $r, "g" => $g, "b" => $b]), "smooth", $seconds * 1000],
 		);
 		$this->sendData(json_encode($val));
 	}
