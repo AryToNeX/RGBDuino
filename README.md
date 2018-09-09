@@ -102,7 +102,7 @@ And you should be all set (at least for now).
 
 ### This project
 
-The client part of this software on Playerctl, a CLI tool that can remotely
+The client part of this software relies on Playerctl, a CLI tool that can remotely
 control MPRIS-capable players. You can get it
 [here](https://github.com/acrisci/playerctl/releases/latest).
 
