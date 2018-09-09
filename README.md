@@ -2,6 +2,17 @@
 PHP daemon and CLI utility for DIY projects with Arduino boards and RGB
 LED strips/bulbs
 
+## Features
+
+- Centralized control for your DIY projects using Arduino and RGB light bulbs/strips. YEA JUST LIKE THE PURCHASED ONES!
+- Control your Xiaomi Yeelight RGB bulbs/strips along your DIY Arduino ones. SYNC THEM!
+- ALBUM ART COLORS WHEN YOU LISTEN TO YOUR FAVORITE MUSIC!!! ON YOUR LIGHTS!!! FEEL THE IMMERSION
+- Create and assign your list of colors to THAT PRECISE strip/bulb to create YOUR OWN animated atmosphere!
+- HIIIIIGHLY configurable!
+- IT IS OPEN SOURCE AND DOES NOT REQUIRE AN INTERNET CONNECTION! F**K THE CLOUD!
+(Although it should require a LAN connection)
+- Comes with kittens 🐱🐱🐱
+
 ## Before you download
 
 Please note: I am only challenging myself here.
