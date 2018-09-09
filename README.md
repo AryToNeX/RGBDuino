@@ -102,12 +102,18 @@ And you should be all set (at least for now).
 
 ### This project
 
-This project relies on Playerctl, a CLI tool that can remotely control MPRIS-capable
-players. You can get it
+The client part of this software on Playerctl, a CLI tool that can remotely
+control MPRIS-capable players. You can get it
 [here](https://github.com/acrisci/playerctl/releases/latest).
 
-You will also need `notify-send`, `zenity`, `screen`, `pidof`, `kill`
-and PHP (>= 7.1) with Sockets support.
+You will also need PHP (>= 7.1) with Sockets support.
+
+Minor dependencies should be installed by default in your Linux distro,
+however some of them are
+
+(Client) `xfconf` (XFCE), `gsettings` (GNOME)
+
+(Server) `rfcomm`
 
 ## Using the project
 
@@ -151,6 +157,8 @@ $ cp build/rgbcli ~/.local/bin/rgbcli
 ```
 
 ## Server configuration file
+
+It is located by default in `~/.local/share/RGBDuino-Server/config.json`
 
 ```json5
 {
@@ -269,6 +277,8 @@ $ cp build/rgbcli ~/.local/bin/rgbcli
 ```
 
 ## Client configuration file
+
+It is located by default in `~/.local/share/RGBDuino-Client/config.json`
 
 ```json5
 {
