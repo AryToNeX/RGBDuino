@@ -39,13 +39,26 @@ pcntl_signal(
 	}
 );
 
+if($status->getCommunicator() === null){
+	echo "Server didn't respond to ping.\n";
+	if($status->getBroadcastReceiver() !== null){
+		echo "Using discovery to find the server...\n";
+		$tries = 0;
+		do{
+			echo "Try $tries\n";
+			$status->getBroadcastReceiver()->receiveBroadcast();
+			$tries++;
+		}while($status->getCommunicator() === null && $tries < 5);
 
-echo "Pinging server...\n";
-if(!$status->pingServer()){
-	echo "Server is off! Exiting...\n";
-	exit(-1);
+		if($tries >= 5){
+			echo "Exiting...\n";
+			exit(0);
+		}
+	}else{
+		echo "Exiting...\n";
+		exit(0);
+	}
 }
-echo "Server is on!\n";
 
 // set empty player details
 $status->getPlayerDetails()->setPlaying(false);
@@ -56,17 +69,44 @@ $status->getCommunicator()->sendPlayerDetails($status->getPlayerDetails());
 while(true){
 	// check if we should exit
 	if($status->getShouldExit() > 0){
-		if($status->getShouldExit() == 2){
+		if($status->getCommunicator() !== null)
+			$status->getCommunicator()->sendClientIsLeaving();
+
+		if($status->getShouldExit() === 2){
 			echo "\n--------------------\n\n";
 			pcntl_exec($_SERVER["_"], $_SERVER["argv"]);
-		}else
-			exit(0);
+		}
+		echo "Exiting...\n";
+		exit(0);
+	}
+
+	// check if we should rediscover the server
+	if($status->getCommunicator() === null){
+		echo "Server didn't respond to ping.\n";
+		if($status->getBroadcastReceiver() !== null){
+			echo "Using discovery to find the server...\n";
+			$tries = 0;
+			do{
+				$status->getBroadcastReceiver()->receiveBroadcast();
+				$tries++;
+			}while($status->getCommunicator() === null || $tries >= 5);
+
+			if($tries >= 5){
+				echo "Exiting...\n";
+				$status->setShouldExit(1);
+				continue;
+			}
+		}else{
+			echo "Exiting...\n";
+			$status->setShouldExit(1);
+			continue;
+		}
 	}
 
 	// wallpaper
 	if($status->getDeskEnv() !== null){
 		$url = Utils::getWallpaperURL($status->getDeskEnv());
-		if($url !== $status->getCurrentWallpaperURL()){
+		if(!empty($url) && $url !== $status->getCurrentWallpaperURL()){
 			echo "Wallpaper changed; computing color...\n";
 			$color = Color::fromArray(Utils::dominantColorFromImage($url));
 			$color->sanitize(
@@ -74,14 +114,30 @@ while(true){
 				$status->getConfig()->getValue("minArtLuminance") ?? null
 			);
 			if(!$status->getCommunicator()->sendWallpaperColor($color) && !$status->pingServer()){
-				echo "Server went off! Exiting...\n";
-				$status->setShouldExit(1);
-				continue;
+				echo "Server went off!\n";
+				if($status->getBroadcastReceiver() !== null){
+					echo "Using discovery to find the server...\n";
+					$tries = 0;
+					do{
+						echo "Try $tries...\n";
+						$status->getBroadcastReceiver()->receiveBroadcast();
+						$tries++;
+					}while($status->getCommunicator() === null && $tries < 5);
+
+					if($tries >= 5){
+						echo "Exiting...\n";
+						$status->setShouldExit(1);
+						continue;
+					}
+				}else{
+					echo "Exiting...\n";
+					$status->setShouldExit(1);
+					continue;
+				}
 			}
 			$status->setCurrentWallpaperURL($url);
 			echo "Color computed and sent!\n";
 		}
-		unset($old);
 	}
 
 	// album art
@@ -118,11 +174,30 @@ while(true){
 				!$status->getCommunicator()->sendPlayerDetails($status->getPlayerDetails()) &&
 				!$status->pingServer()
 			){
-				echo "Server went off! Exiting...\n";
-				$status->setShouldExit(1);
-				continue;
+				echo "Server went off!\n";
+				if($status->getBroadcastReceiver() !== null){
+					echo "Using discovery to find the server...\n";
+					$tries = 0;
+					do{
+						echo "Try $tries...\n";
+						$status->getBroadcastReceiver()->receiveBroadcast();
+						$tries++;
+					}while($status->getCommunicator() === null && $tries < 5);
+
+					if($tries >= 5){
+						echo "Exiting...\n";
+						$status->setShouldExit(1);
+						continue;
+					}
+				}else{
+					echo "Exiting...\n";
+					$status->setShouldExit(1);
+					continue;
+				}
 			}
 		}
 		unset($old);
 	}
+
+	sleep(2);
 }

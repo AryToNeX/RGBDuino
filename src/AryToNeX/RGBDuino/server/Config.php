@@ -68,8 +68,12 @@ class Config{
 		}
 		if($updated){
 			$this->data = $current;
-			file_put_contents($this->path, json_encode($this->data, JSON_PRETTY_PRINT));
+			$this->save();
 		}
+	}
+
+	public function save() : void{
+		file_put_contents($this->path, json_encode($this->data, JSON_PRETTY_PRINT));
 	}
 
 }

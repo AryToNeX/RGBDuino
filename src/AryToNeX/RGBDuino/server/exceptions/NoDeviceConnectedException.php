@@ -16,36 +16,12 @@
  * limitations under the License.
  */
 
-namespace AryToNeX\RGBDuino\server\devices;
+namespace AryToNeX\RGBDuino\server\exceptions;
 
 /**
- * Class FakeArduino
- * @package AryToNeX\RGBDuino\server\devices
+ * Class NoDeviceConnectedException
+ * @package AryToNeX\RGBDuino\server\exceptions
  */
-class FakeArduino extends Arduino{
-
-	/**
-	 * FakeArduino constructor.
-	 */
-	public function __construct(){
-		parent::__construct();
-
-		echo "Fake arduino opened!\n";
-	}
-
-	public function isConnected() : bool{
-		return true;
-	}
-
-	public function close() : void{
-		echo "Fake Arduino connection closed!\n";
-	}
-
-	/**
-	 * @param string $data
-	 */
-	protected function sendData(string $data) : void{
-		echo "Fake Arduino received: $data\n";
-	}
+class NoDeviceConnectedException extends \Exception{
 
 }

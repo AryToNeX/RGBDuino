@@ -1,6 +1,8 @@
 {
   "serverIp": "0.0.0.0",
   "serverPort": 6969,
+  "useLocalDiscovery": true,
+  "discoveryPort": 6969,
   "sendWallpaperColor": true,
   "sendPlayerStatus": true,
   "colorsToExtract": 5,

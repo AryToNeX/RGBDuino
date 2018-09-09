@@ -40,11 +40,11 @@ class FaderHelper{
 	}
 
 	/**
-	 * @param Color         $color
+	 * @param array         $colors
 	 * @param callable|null $shouldStop
 	 * @param bool          $priority
 	 */
-	public function fadeTo(Color $color, ?callable $shouldStop = null, bool $priority = false) : void{
+	public function fadeTo(array $colors, ?callable $shouldStop = null, bool $priority = false) : void{
 
 		$pool = $this->status->getDevicePool()->toArray();
 
@@ -54,7 +54,7 @@ class FaderHelper{
 				continue;
 			}
 
-			$testColor = $color;
+			$testColor = $colors[$id] ?? $colors["global"];
 			if(!$priority){
 				if(!is_null($this->status->getUserChosenColor($id))){
 					$testColor = $this->status->getUserChosenColor($id);
@@ -74,7 +74,8 @@ class FaderHelper{
 					continue;
 				}
 			}
-			$shades[$id] = $this->getShades($device->getCurrentColor(), $color);
+
+			$shades[$id] = $this->getShades($device->getCurrentColor(), $colors[$id] ?? $colors["global"]);
 		}
 
 		for($i = 0; $i <= 100; $i++){
@@ -87,12 +88,12 @@ class FaderHelper{
 	}
 
 	/**
-	 * @param Color         $color
+	 * @param array         $colors
 	 * @param float         $seconds
 	 * @param callable|null $shouldStop
 	 * @param bool          $priority
 	 */
-	public function timedFadeTo(Color $color,
+	public function timedFadeTo(array $colors,
 								float $seconds = 2,
 								?callable $shouldStop = null,
 								bool $priority =
@@ -106,7 +107,7 @@ class FaderHelper{
 				continue;
 			}
 
-			$testColor = $color;
+			$testColor = $colors[$id] ?? $colors["global"];
 			if(!$priority){
 				if(!is_null($this->status->getUserChosenColor($id))){
 					$testColor = $this->status->getUserChosenColor($id);
@@ -129,8 +130,8 @@ class FaderHelper{
 					continue;
 				}
 			}
-			$shades[$id] = $this->getShades($device->getCurrentColor(), $color);
-			$finishedColors[$id] = $color;
+			$shades[$id] = $this->getShades($device->getCurrentColor(), $colors[$id] ?? $colors["global"]);
+			$finishedColors[$id] = $colors[$id] ?? $colors["global"];
 		}
 
 		$shades = $this->mapShadesToSeconds($shades, $seconds);

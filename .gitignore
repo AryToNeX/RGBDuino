@@ -3,3 +3,6 @@ build/
 build-number
 BuildPharAndUpload.php
 test.php
+/TODO.md
+/ssdp-receive-connect.php
+/ssdp-announce-refresh.php

@@ -26,9 +26,13 @@ namespace AryToNeX\RGBDuino\server;
 class TCPCommandsManager{
 
 	/** @var resource */
-	private $sock;
+	protected $sock;
 	/** @var Status */
-	private $owner;
+	protected $owner;
+	/** @var int */
+	protected $port;
+	/** @var int|null */
+	protected $lastCommandTime;
 
 	/**
 	 * TCPCommandsManager constructor.
@@ -39,11 +43,26 @@ class TCPCommandsManager{
 	public function __construct(Status $owner, int $port){
 		$this->owner = $owner;
 		$this->sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+		$this->port = $port;
 		socket_set_nonblock($this->sock);
 		socket_set_option($this->sock, SOL_SOCKET, SO_REUSEADDR, 1);
 		socket_bind($this->sock, "0.0.0.0", $port);
 		socket_listen($this->sock);
 		echo "TCP Socket listening on port $port\n";
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getPort() : int{
+		return $this->port;
+	}
+
+	/**
+	 * @return int|null
+	 */
+	public function getLastCommandTime() : ?int{
+		return $this->lastCommandTime;
 	}
 
 	public function doStuff() : void{
@@ -210,6 +229,19 @@ class TCPCommandsManager{
 						echo "Update not necessary\n";
 					}
 					break;
+				case "clientIsHere":
+					socket_getpeername($accept, $ip);
+					$this->owner->setConnectedClient($ip);
+					$this->owner->setConnectedClientStatus(1);
+					socket_write($accept, "CLIENT_IS_HERE_RECEIVED\n");
+					echo "TCP: Client is here\n";
+					break;
+				case "clientIsLeaving":
+					$this->owner->setConnectedClient(null);
+					$this->owner->setConnectedClientStatus(-1);
+					socket_write($accept, "CLIENT_IS_LEAVING_RECEIVED\n");
+					echo "TCP: Client left\n";
+					break;
 				default:
 					socket_write($accept, "UNDEFINED_COMMAND\n");
 					echo "TCP: Undefined command\n";
@@ -217,6 +249,7 @@ class TCPCommandsManager{
 			}
 			if(implode(" ", $str) !== "") socket_shutdown($accept, 2);
 			socket_close($accept);
+			$this->lastCommandTime = time();
 			echo "TCP: Connection from $ip:$port closed.\n";
 		}
 	}

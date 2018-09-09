@@ -33,6 +33,8 @@ class Status{
 	private $wallpaperColor;
 	/** @var bool */
 	private $isWallpaperChanged;
+	/** @var array */
+	private $cycleColors;
 	/** @var DevicePool */
 	private $devicePool;
 	/** @var Config */
@@ -41,6 +43,10 @@ class Status{
 	private $playerStatus;
 	/** @var TCPCommandsManager */
 	private $tcpManager;
+	/** @var Broadcast */
+	private $broadcast;
+	/** @var array */
+	private $connectedClientStatus;
 	/** @var int */
 	private $shouldExit;
 
@@ -55,6 +61,16 @@ class Status{
 		$this->config = new Config($cfgpath);
 		$this->devicePool = new DevicePool();
 		$this->tcpManager = new TCPCommandsManager($this, $this->config->getValue("tcpPort") ?? 6969);
+
+		$this->cycleColors = $this->config->getValue("cycleColors");
+		foreach($this->cycleColors as $key => $colors)
+			foreach($colors as $id => $color)
+				$this->cycleColors[$key][$id] = Color::fromHex($color);
+
+		if($this->config->getValue("useLocalDiscovery") ?? true){
+			$this->broadcast = new Broadcast($this, $this->config->getValue("discoveryPort") ?? 6969);
+			$this->connectedClientStatus = array("connected-client" => null, "status" => -1);
+		}
 
 		if($this->config->getValue("acceptAlbumArtColors") ?? false)
 			$this->playerStatus = new PlayerStatus($this);
@@ -75,13 +91,16 @@ class Status{
 
 		if(!isset($values) || empty($values)) return;
 
-		$this->wallpaperColor = $values["wallColor"];
+		if(isset($values["wallColor"])){
+			$this->wallpaperColor = Color::fromHex($values["wallColor"]);
+			$this->isWallpaperChanged = true;
+		}
+
 		$colorArr = array();
 		foreach($values["chosenColorArr"] as $id => $hex)
 			if(isset($hex))
 				$colorArr[$id] = Color::fromHex($hex);
 		$this->userChosenColorArray = $colorArr;
-		$this->isWallpaperChanged = true;
 	}
 
 	public function saveCacheValues() : void{
@@ -90,10 +109,12 @@ class Status{
 		foreach($this->userChosenColorArray as $id => $color)
 			if(isset($color))
 				$colorArr[$id] = $color->asHex();
-		$values = array(
-			"wallColor"      => $this->wallpaperColor,
-			"chosenColorArr" => $colorArr,
-		);
+
+		$values = array();
+		$values["chosenColorArr"] = $colorArr;
+		if(isset($this->wallpaperColor))
+			$values["wallColor"] = $this->wallpaperColor->asHex();
+
 		file_put_contents("/home/" . exec("whoami") . "/.cache/RGBDuino/status.json", json_encode($values));
 	}
 
@@ -173,6 +194,40 @@ class Status{
 		return $this->tcpManager;
 	}
 
+	public function getBroadcast() : ?Broadcast{
+		return $this->broadcast;
+	}
+
+	/**
+	 * @return null|string
+	 */
+	public function getConnectedClient() : ?string{
+		return $this->connectedClientStatus["connected-client"];
+	}
+
+	/**
+	 * @param null|string $connectedClient
+	 */
+	public function setConnectedClient(?string $connectedClient) : void{
+		if(!isset($this->connectedClientStatus)) return;
+		$this->connectedClientStatus["connected-client"] = $connectedClient;
+	}
+
+	/**
+	 * @return int|null
+	 */
+	public function getConnectedClientStatus() : ?int{
+		return $this->connectedClientStatus["status"];
+	}
+
+	/**
+	 * @param int $status
+	 */
+	public function setConnectedClientStatus(int $status) : void{
+		if(!isset($this->connectedClientStatus)) return;
+		$this->connectedClientStatus["status"] = $status;
+	}
+
 	/**
 	 * @return Color
 	 */
@@ -187,6 +242,9 @@ class Status{
 		$this->wallpaperColor = $wallpaperColor;
 	}
 
+	/**
+	 * @return bool
+	 */
 	public function isWallpaperChanged() : bool{
 		return $this->isWallpaperChanged;
 	}
@@ -196,6 +254,13 @@ class Status{
 	 */
 	public function setWallpaperChanged(bool $isWallpaperChanged) : void{
 		$this->isWallpaperChanged = $isWallpaperChanged;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getCycleColors() : array{
+		return $this->cycleColors;
 	}
 
 	/**

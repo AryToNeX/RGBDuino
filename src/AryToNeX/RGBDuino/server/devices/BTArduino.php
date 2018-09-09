@@ -57,25 +57,24 @@ class BTArduino extends Arduino{
 		// Save MAC address to object
 		$this->mac = $macAddress;
 
-		$out = Utils::detectBluetoothArduino();
-
 		// check if specified port was passed via argument
 		if(isset($rfcommPort))
 			// check if port already is bound to something
-			if(in_array("rfcomm" . $rfcommPort, $out))
+			if(file_exists("/dev/rfcomm") . $rfcommPort)
 				throw new RFCOMMPortExistsException("Defined RFCOMM port is already bound to something");
-			else
+			else{
 				// no port was passed via argument, default to the first free one
+				$out = Utils::detectBluetoothArduino();
 				$rfcommPort = intval(
 						substr($out[count($out) - 1], -1)
 					) + 1;
+			}
 
 		// Bind to /dev/rfcommN via rfcomm command
 		exec("rfcomm bind $rfcommPort $this->mac 1", $out, $status);
 
 		// check if serial port opened correctly
-		$out = Utils::detectBluetoothArduino();
-		if(!in_array("rfcomm" . $rfcommPort, $out))
+		if(!file_exists("/dev/rfcomm") . $rfcommPort)
 			throw new SerialPortNotFoundException("Unable to find RFCOMM serial port after binding");
 
 		$this->tty = "/dev/rfcomm" . $rfcommPort;
@@ -88,6 +87,13 @@ class BTArduino extends Arduino{
 		// open serial stream
 		$this->stream = fopen($this->tty, "w+");
 		if(!$this->stream) throw new CannotOpenSerialConnectionException("Can't establish serial connection");
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isConnected() : bool{
+		return file_exists($this->tty);
 	}
 
 	/**

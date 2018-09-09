@@ -3,6 +3,9 @@
   "useUsb": true,
   "useBluetooth": false,
   "bluetooth": [],
+  "useYeelight": false,
+  "yeelight": [],
+  "checkEvery": 30,
   "defaultColor": "FFFFFF",
   "saveDefaultColor": false,
   "acceptAlbumArtColors": true,
@@ -10,13 +13,18 @@
   "idleMode": "color-cycle",
   "normalFadeSeconds": 2,
   "animationFadeSeconds": 5,
-  "cycleColors": [
-    "FF0000",
-    "FFFF00",
-    "00FF00",
-    "00FFFF",
-    "0000FF",
-    "FF00FF"
-  ],
-  "tcpPort": 6969
+  "cycleColors": {
+    "global": [
+      "FF0000",
+      "FFFF00",
+      "00FF00",
+      "00FFFF",
+      "0000FF",
+      "FF00FF"
+    ]
+  },
+  "tcpPort": 6969,
+  "useLocalDiscovery": true,
+  "discoveryPort": 6969,
+  "broadcastEvery": 5
 }

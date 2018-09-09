@@ -18,63 +18,29 @@
 
 namespace AryToNeX\RGBDuino\server;
 
-use AryToNeX\RGBDuino\server\devices\USBArduino;
-use AryToNeX\RGBDuino\server\devices\BTArduino;
-
 cli_set_process_title("rgbduino-server");
 
 $status = new Status();
+$discovery = new DeviceDiscovery($status);
 
 echo "Initializing device connections...\n";
 $tries = 0;
 do{
 	$good = true;
-	try{
-		// /*
-
-		if($status->getConfig()->getValue("useUsb") ?? true){
-			$serials = Utils::detectUSBArduino();
-			if(empty($serials)) throw new \Exception("No Device USB devices found");
-			foreach($serials as $serial)
-				$status->getDevicePool()->add(
-					"USB-" . $serial,
-					new USBArduino($serial, $status->getConfig()->getValue("baudRate") ?? 9600)
-				);
-		}
-
-		if($status->getConfig()->getValue("useUsb") ?? false){
-			foreach($status->getConfig()->getValue("bluetooth") as $btd)
-				$status->getDevicePool()->add(
-					"BT-" . $btd["identifier"],
-					new BTArduino(
-						$btd["mac"],
-						$btd["rfcommPort"] ?? null,
-						$status->getConfig()->getValue("baudRate") ?? 9600
-					)
-				);
-		}
-
-		// */
-
-		//$status->getDevicePool()->add("FakeArduino", new devices\FakeArduino());
-		// DEBUGGING FTW
-	}catch(\Exception $e){
-		echo "Exception: " . $e->getMessage() . " - Waiting 2 seconds...\n";
-		$good = false;
+	$discovery->checkConnected();
+	//$status->getDevicePool()->add("FakeArduino", new devices\FakeArduino());
+	// DEBUGGING FTW
+	if(empty($status->getDevicePool()->toArray())){
+		echo "No devices connected! Waiting 2 seconds...\n";
 		$tries++;
+		$good = false;
 		sleep(2);
 	}
 }while(!$good && $tries < 5);
 
 if(!$good){
 	echo "Can't connect. Exiting...\n";
-	exec(
-		"zenity --error --ellipsize \
-    --title=\"RGBDuino Error\" \
-    --text=\"RGBDuino can't connect to the LED strip because of an error and thus it stopped.\nPlease restore your connections, then use the CLI utility 'rgbduino start' to start it again.\" \
-    --ok-label=\"That's so sad, Alexa play Despacito\""
-	);
-	die;
+	exit(-1);
 }
 
 unset($good);
@@ -82,11 +48,6 @@ unset($tries);
 
 // Started successfully!
 echo "Device connections established correctly!\n";
-exec(
-	"notify-send -u normal -i arduino \
-\"RGBDuino is started and working!\" \
-\"View the log via <b>screen -r rgbduino</b>\""
-);
 
 $fader = new FaderHelper($status);
 
@@ -111,9 +72,20 @@ if($status->getConfig()->getValue("saveDefaultColor") ?? false){
 }
 
 $albumArtMediaArray = array();
+$cycleKeys = array();
+foreach(array_keys($status->getCycleColors()) as $key)
+	$cycleKeys[$key] = 0;
 
 $doStuff = function() use ($status){
+	// tcp commands
 	$status->getTcpManager()->doStuff();
+
+	// broadcasting
+	if($status->getBroadcast() !== null)
+		if($status->getConnectedClientStatus() !== 1 && $status->getBroadcast()->isTimeToBroadcast())
+			$status->getBroadcast()->broadcast();
+
+	// exit
 	if($status->getShouldExit() > 0){
 		$status->getTcpManager()->close();
 		foreach($status->getDevicePool()->toArray() as $device)
@@ -122,16 +94,28 @@ $doStuff = function() use ($status){
 		if($status->getShouldExit() == 2){
 			echo "\n--------------------\n\n";
 			pcntl_exec($_SERVER["_"], $_SERVER["argv"]);
-		}else
-			exit(0);
+		}
+		exit(0);
 	}
 };
 
 // cycle between animations
 echo "Initializing loop\n";
 while(true){
+	// DISCOVERY PART
+	if($discovery->isTimeToCheck()){
+		$discovery->checkDisconnected();
+		$discovery->checkConnected();
+	}
+
 	// NETWORKING PART
 	$doStuff();
+	if($status->getBroadcast() !== null)
+		if(
+			$status->getTcpManager()->getLastCommandTime() !== null &&
+			time() - $status->getTcpManager()->getLastCommandTime() > 3600
+		)
+			$status->setConnectedClientStatus(0);
 
 	// ANIMATIONS PART
 	if($status->getPlayerStatus() !== null){
@@ -147,10 +131,11 @@ while(true){
 				echo "Album art changed\n";
 				$albumArtMediaArray = $status->getPlayerStatus()->getAlbumArtColorArray();
 			}
+			/** @var Color $color */
 			foreach($albumArtMediaArray as $color){
 				$oldURL = $status->getPlayerStatus()->getArtURL();
 				$fader->timedFadeTo(
-					$color,
+					["global" => $color],
 					$status->getConfig()->getValue("animationFadeSeconds") ?? 5,
 					function() use ($oldURL, $status, $doStuff){
 						$doStuff(); // check networking
@@ -185,7 +170,7 @@ while(true){
 		if($status->getShowing() === -1 || $status->getShowing() === 1) echo "Using chosen global color\n";
 		$status->setShowing(0);
 		$fader->timedFadeTo(
-			$status->getUserChosenColor(),
+			["global" => $status->getUserChosenColor()],
 			$status->getConfig()->getValue("normalFadeSeconds") ?? 2,
 			function() use ($status, $doStuff){
 				$doStuff(); // check networking
@@ -209,35 +194,41 @@ while(true){
 	if(($status->getConfig()->getValue("idleMode") ?? "color-cycle") == "color-cycle"){
 		if($status->getShowing() === -1 || $status->getShowing() === 1) echo "Using color cycling\n";
 		$status->setShowing(0);
-		foreach(($status->getConfig()->getValue("cycleColors") ?? ["FFFFFF", "000000"]) as $hex){
-			$fader->timedFadeTo(
-				Color::fromHex($hex),
-				$status->getConfig()->getValue("animationFadeSeconds") ?? 5,
-				function() use ($status, $doStuff){
-					$doStuff(); // check networking
-					// check if music is playing
-					if(
-						$status->getPlayerStatus() !== null &&
-						$status->getPlayerStatus()->isPlaying()
-					){
-						return true;
-					}
-					// check if custom color is set
-					if($status->getUserChosenColor() !== null) return true;
 
-					return false;
-				}
-			);
-			// interrupt color cycling if track is playing
-			if(
-				$status->getPlayerStatus() !== null &&
-				$status->getPlayerStatus()->isPlaying()
-			){
-				continue 2;
-			}
-			// interrupt color cycling if custom color is set
-			if($status->getUserChosenColor() !== null) continue 2;
+		$colors = array();
+		foreach($status->getCycleColors() as $id => $col){
+			$count = count($col);
+			if($cycleKeys[$id] >= $count) $cycleKeys[$id] = 0;
+			$colors[$id] = $col[$cycleKeys[$id]++];
 		}
+
+		$fader->timedFadeTo(
+			$colors,
+			$status->getConfig()->getValue("animationFadeSeconds") ?? 5,
+			function() use ($status, $doStuff){
+				$doStuff(); // check networking
+				// check if music is playing
+				if(
+					$status->getPlayerStatus() !== null &&
+					$status->getPlayerStatus()->isPlaying()
+				){
+					return true;
+				}
+				// check if custom color is set
+				if($status->getUserChosenColor() !== null) return true;
+
+				return false;
+			}
+		);
+		// interrupt color cycling if track is playing
+		if(
+			$status->getPlayerStatus() !== null &&
+			$status->getPlayerStatus()->isPlaying()
+		){
+			continue;
+		}
+		// interrupt color cycling if custom color is set
+		if($status->getUserChosenColor() !== null) continue;
 		continue;
 	}
 
@@ -253,7 +244,7 @@ while(true){
 			$status->setWallpaperChanged(false);
 		}
 		$fader->timedFadeTo(
-			$status->getWallpaperColor(),
+			["global" => $status->getWallpaperColor()],
 			$status->getConfig()->getValue("normalFadeSeconds") ?? 2,
 			function() use ($status, $doStuff){
 				$doStuff(); // check networking
@@ -281,7 +272,7 @@ while(true){
 		if($status->getShowing() === -1 || $status->getShowing() === 1) echo "Using default color\n";
 		$status->setShowing(0);
 		$fader->timedFadeTo(
-			Color::fromHex($status->getConfig()->getValue("defaultColor") ?? "FFFFFF"),
+			["global" => Color::fromHex($status->getConfig()->getValue("defaultColor") ?? "FFFFFF")],
 			$status->getConfig()->getValue("normalFadeSeconds") ?? 2,
 			function() use ($status, $doStuff){
 				$doStuff(); // check networking

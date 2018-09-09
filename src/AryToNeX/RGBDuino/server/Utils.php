@@ -32,19 +32,29 @@ class Utils{
 	 */
 	public static function detectUSBArduino(){
 		// list USB serial ports
-		exec("ls /dev/ | grep ttyUSB", $out);
-
-		return $out;
+		return array_values(
+			array_filter(
+				scandir("/dev/"),
+				function($val){
+					return (strpos($val, "ttyUSB") !== false);
+				}
+			)
+		);
 	}
 
 	/**
 	 * @return array
 	 */
 	public static function detectBluetoothArduino(){
-		// list USB serial ports
-		exec("ls /dev/ | grep rfcomm", $out);
-
-		return $out;
+		// list Bluetooth serial ports
+		return array_values(
+			array_filter(
+				scandir("/dev/"),
+				function($val){
+					return (strpos($val, "rfcomm") !== false);
+				}
+			)
+		);
 	}
 
 }

@@ -19,6 +19,7 @@
 namespace AryToNeX\RGBDuino\client;
 
 use AryToNeX\RGBDuino\client\exceptions\MalformedIPException;
+use AryToNeX\RGBDuino\client\exceptions\UnresponsiveServerException;
 
 /**
  * Class Status
@@ -28,6 +29,8 @@ class Status{
 
 	/** @var Config */
 	protected $config;
+	/** @var BroadcastReceiver */
+	protected $broadcastReceiver;
 	/** @var Communicator */
 	protected $communicator;
 	/** @var PlayerDetails */
@@ -49,14 +52,17 @@ class Status{
 	public function __construct(?string $cfgpath = null){
 		$this->shouldExit = 0;
 		$this->config = new Config($cfgpath);
+
+		if($this->config->getValue("useLocalDiscovery") ?? true)
+			$this->broadcastReceiver = new BroadcastReceiver($this, $this->config->getValue("discoveryPort") ?? 6969);
+
 		try{
 			$this->communicator = new Communicator(
 				$this->config->getValue("serverIp") ?? "0.0.0.0",
 				$this->config->getValue("serverPort") ?? 6969
 			);
-		}catch(MalformedIPException $e){
-			echo "Exception: malformed IP on configuration! Fix this issue, then restart the client.\n";
-			exit(-1);
+		}catch(MalformedIPException | UnresponsiveServerException $e){
+			$this->communicator = null;
 		}
 
 		if($this->config->getValue("sendPlayerStatus") ?? true && !empty(exec("which playerctl"))){
@@ -79,10 +85,24 @@ class Status{
 	}
 
 	/**
-	 * @return Communicator
+	 * @return BroadcastReceiver|null
 	 */
-	public function getCommunicator() : Communicator{
+	public function getBroadcastReceiver() : ?BroadcastReceiver{
+		return $this->broadcastReceiver;
+	}
+
+	/**
+	 * @return Communicator|null
+	 */
+	public function getCommunicator() : ?Communicator{
 		return $this->communicator;
+	}
+
+	/**
+	 * @param Communicator $communicator
+	 */
+	public function setCommunicator(?Communicator $communicator) : void{
+		$this->communicator = $communicator;
 	}
 
 	/**

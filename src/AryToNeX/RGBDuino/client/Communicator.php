@@ -20,6 +20,7 @@ namespace AryToNeX\RGBDuino\client;
 
 use AryToNeX\RGBDuino\client\exceptions\TCPSocketException;
 use AryToNeX\RGBDuino\client\exceptions\MalformedIPException;
+use AryToNeX\RGBDuino\client\exceptions\UnresponsiveServerException;
 
 /**
  * Class Communicator
@@ -39,11 +40,33 @@ class Communicator{
 	 * @param int    $port
 	 *
 	 * @throws MalformedIPException
+	 * @throws UnresponsiveServerException
 	 */
 	public function __construct(string $ip, int $port){
 		$this->ip = filter_var($ip, FILTER_VALIDATE_IP);
 		if($this->ip === false) throw new MalformedIPException("Malformed IP!");
 		$this->port = $port;
+
+		echo "Pinging server...\n";
+		$result = $this->tryPing();
+		if($result) echo "Server responded to ping!\n";
+		else throw new UnresponsiveServerException("Server didn't respond to ping.");
+
+		$this->sendClientIsHere();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getIp() : string{
+		return $this->ip;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getPort() : int{
+		return $this->port;
 	}
 
 	/**
@@ -62,7 +85,37 @@ class Communicator{
 	}
 
 	/**
-	 * @param array|null $color
+	 * @return bool
+	 */
+	public function sendClientIsHere() : bool{
+		try{
+			$sock = $this->createSock();
+		}catch(TCPSocketException $e){
+			return false;
+		}
+		$response = self::writeCommand($sock, ["clientIsHere"]);
+		if($response === "CLIENT_IS_HERE_RECEIVED") return true;
+
+		return false;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function sendClientIsLeaving() : bool{
+		try{
+			$sock = $this->createSock();
+		}catch(TCPSocketException $e){
+			return false;
+		}
+		$response = self::writeCommand($sock, ["clientIsLeaving"]);
+		if($response === "CLIENT_IS_LEAVING_RECEIVED") return true;
+
+		return false;
+	}
+
+	/**
+	 * @param Color|null $color
 	 *
 	 * @return bool
 	 */

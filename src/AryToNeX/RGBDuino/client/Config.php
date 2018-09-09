@@ -52,6 +52,11 @@ class Config{
 		return $this->data[$key];
 	}
 
+	public function setValue(string $key, $value) : void{
+		if(isset($this->data[$key]))
+			$this->data[$key] = $value;
+	}
+
 	protected function fixMissing() : void{
 		if(!is_file($this->path)){
 			@mkdir(pathinfo($this->path, PATHINFO_DIRNAME), 0755, true);
@@ -68,8 +73,12 @@ class Config{
 		}
 		if($updated){
 			$this->data = $current;
-			file_put_contents($this->path, json_encode($this->data, JSON_PRETTY_PRINT));
+			$this->save();
 		}
+	}
+
+	public function save() : void{
+		file_put_contents($this->path, json_encode($this->data, JSON_PRETTY_PRINT));
 	}
 
 }

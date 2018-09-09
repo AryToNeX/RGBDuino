@@ -33,7 +33,13 @@ abstract class Device{
 
 	public function __construct(){
 		$this->isActive = true;
+		$this->currentColor = new Color(0, 0, 0); // Placeholder af
 	}
+
+	/**
+	 * @return bool
+	 */
+	abstract public function isConnected() : bool;
 
 	/**
 	 * @return bool

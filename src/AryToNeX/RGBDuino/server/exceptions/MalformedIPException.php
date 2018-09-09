@@ -19,9 +19,9 @@
 namespace AryToNeX\RGBDuino\server\exceptions;
 
 /**
- * Class NoArduinoConnectedException
+ * Class MalformedIPException
  * @package AryToNeX\RGBDuino\server\exceptions
  */
-class NoArduinoConnectedException extends \Exception{
+class MalformedIPException extends \Exception{
 
 }

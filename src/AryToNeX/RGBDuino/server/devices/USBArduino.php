@@ -19,7 +19,7 @@
 namespace AryToNeX\RGBDuino\server\devices;
 
 use AryToNeX\RGBDuino\server\exceptions\CannotOpenSerialConnectionException;
-use AryToNeX\RGBDuino\server\exceptions\NoArduinoConnectedException;
+use AryToNeX\RGBDuino\server\exceptions\NoDeviceConnectedException;
 use AryToNeX\RGBDuino\server\exceptions\SerialPortNotFoundException;
 use AryToNeX\RGBDuino\server\Utils;
 
@@ -34,27 +34,25 @@ class USBArduino extends Arduino{
 	 * @param string $tty
 	 * @param int    $baudRate
 	 *
-	 * @throws NoArduinoConnectedException
 	 * @throws SerialPortNotFoundException
 	 * @throws CannotOpenSerialConnectionException
 	 */
 	public function __construct(?string $tty = null, int $baudRate = 9600){
 		parent::__construct();
 
-		// list USB serial ports
-		$out = Utils::detectUSBArduino();
-		if(empty($out)) throw new NoArduinoConnectedException("No Device devices found");
-
 		// check if specified port was passed via argument
 		if(isset($tty))
 			// check if port actually exists
-			if(in_array($tty, $out))
+			if(file_exists("/dev/" . $tty))
 				$this->tty = "/dev/" . $tty;
 			else
 				throw new SerialPortNotFoundException("Defined TTY doesn't exist");
-		else
+		else{
 			// no port was passed via argument, default to first one
+			$out = Utils::detectUSBArduino();
+			if(empty($out)) throw new SerialPortNotFoundException("Couldn't find any USB serial ports!");
 			$this->tty = "/dev/" . $out[0];
+		}
 
 		// setup TTY according to Arduino IDE
 		exec(
@@ -64,6 +62,13 @@ class USBArduino extends Arduino{
 		// open serial stream
 		$this->stream = fopen($this->tty, "w+");
 		if(!$this->stream) throw new CannotOpenSerialConnectionException("Can't establish serial connection");
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isConnected() : bool{
+		return file_exists($this->tty);
 	}
 
 	public function close() : void{

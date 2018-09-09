@@ -179,6 +179,24 @@ $ cp build/rgbcli ~/.local/bin/rgbcli
     }
   ],
   
+  // Do you want to use your Xiaomi Yeelight RGB devices? (Note: unsupported AND still in testing)
+  "useYeelight": false,
+  
+  // List here your Yeelight IPs and identifiers (Note: unsupported AND still in testing)
+  "yeelight": [
+    {
+      "ip": "192.168.1.56",
+      "identifier": "KitchenLamp"
+    },
+    {
+      "ip": "192.168.1.101",
+      "identifier": "BedroomLamp"
+    }
+  ],
+  
+  // How many seconds should pass before checking if a device connected/disconnected? (1-60)
+  "checkEvery": 30,
+  
   // The default color that will be displayed
   // if idleMode is set to defaultColor or if you screw up things
   "defaultColor": "FFFFFF",
@@ -212,22 +230,41 @@ $ cp build/rgbcli ~/.local/bin/rgbcli
   // really slow it is.
   "animationFadeSeconds": 10,
   
-  // Array of HEX colors (as strings)
+  // K-V Array of array of HEX colors (as strings)
   // Specify here which colors you prefer when cycling in idle mode.
-  // Defaults to the rainbow.
-  "cycleColors": [
-    "FF0000",
-    "FFFF00",
-    "00FF00",
-    "00FFFF",
-    "0000FF",
-    "FF00FF"
-  ],
+  // Defaults to the rainbow for every device (global).
+  // You can set a specific cycle to a specific device by adding a
+  // new K-V entry for it
+  "cycleColors": {
+    "global": [
+      "FF0000",
+      "FFFF00",
+      "00FF00",
+      "00FFFF",
+      "0000FF",
+      "FF00FF"
+    ],
+    "KitchenLights": [
+      "FF0000",
+      "00FF00",
+      "0000FF"
+    ]
+  },
   
   // Integer value, the TCP port the daemon will be listening on.
   // It's needed for the CLI tool to work and it can be useful for you, if you
   // want to connect to the daemon from the LAN to change colors and do stuff.
-  "tcpPort": 6969
+  "tcpPort": 6969,
+  
+  // Should RGBDuino-Server announce itself to other clients?
+  // Disable this if you're running static IP configurations
+  "useLocalDiscovery": true,
+  
+  // The UDP port on which the server will announce itself
+  "discoveryPort": 6969,
+  
+  // How many seconds should pass between discovery broadcasts? (1-30)
+  "broadcastEvery": 5
 }
 ```
 
@@ -237,10 +274,19 @@ $ cp build/rgbcli ~/.local/bin/rgbcli
 {
 
   // The server IP, this must be set correctly and respect the IPv4 or IPv6 scheme.
+  // NOTE: this value will be automatically updated when Local Discovery is on (see below)
   "serverIp": "0.0.0.0",
   
   // The server port. Defaults to 6969. Change it if needed.
+  // NOTE: this value will be automatically updated when Local Discovery is on (see below)
   "serverPort": 6969,
+  
+  // Should RGBDuino-Client listen for server announcements?
+  // Disable this if you're running static IP configurations
+  "useLocalDiscovery": true,
+    
+  // The UDP port on which the client will listen to announcements by the server
+  "discoveryPort": 6969,
   
   // Should we send wallpaper color to the LED strips?
   // Supported desktop environments:
