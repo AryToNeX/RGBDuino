@@ -19,7 +19,6 @@
 namespace AryToNeX\RGBDuino\server\devices;
 
 use AryToNeX\RGBDuino\server\exceptions\CannotOpenSerialConnectionException;
-use AryToNeX\RGBDuino\server\exceptions\NoDeviceConnectedException;
 use AryToNeX\RGBDuino\server\exceptions\SerialPortNotFoundException;
 use AryToNeX\RGBDuino\server\Utils;
 
