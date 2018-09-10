@@ -31,6 +31,8 @@ class TCPCommandsManager{
 	protected $owner;
 	/** @var int */
 	protected $port;
+	/** @var bool */
+	protected $strictMode;
 	/** @var int|null */
 	protected $lastCommandTime;
 
@@ -39,11 +41,13 @@ class TCPCommandsManager{
 	 *
 	 * @param Status $owner
 	 * @param int    $port
+	 * @param bool   $strictMode
 	 */
-	public function __construct(Status $owner, int $port){
+	public function __construct(Status $owner, int $port, bool $strictMode = true){
 		$this->owner = $owner;
 		$this->sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 		$this->port = $port;
+		$this->strictMode = $strictMode;
 		socket_set_nonblock($this->sock);
 		socket_set_option($this->sock, SOL_SOCKET, SO_REUSEADDR, 1);
 		socket_bind($this->sock, "0.0.0.0", $port);
@@ -73,6 +77,24 @@ class TCPCommandsManager{
 			echo "TCP: Connection from $ip:$port. Serving...\n";
 			$str = self::socket_read_until($accept, "\n");
 			$str = explode(" ", $str);
+			if(
+				!( // LOCAL LOOPBACK IS ALWAYS ALLOWED
+					ip2long("127.0.0.1") < ip2long($ip) &&
+					ip2long($ip) < ip2long("127.255.255.254")
+				) &&
+				($this->strictMode && $this->owner->getConnectedClient() !== null) &&
+				$this->owner->getConnectedClient() !== $ip
+			){
+				echo "TCP: A foreigner tried to connect to this server!\n";
+				echo "TCP: Its commands were: '" . implode(" ", $str) . "'\n";
+				socket_write($accept, "NOT_ALLOWED\n");
+				if(implode(" ", $str) !== "") socket_shutdown($accept, 2);
+				socket_close($accept);
+				echo "TCP: Denied connection to $ip:$port!\n";
+
+				return;
+			}
+
 			switch(array_shift($str)){
 				case "ping":
 					socket_write($accept, "PONG\n");

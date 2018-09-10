@@ -63,7 +63,11 @@ class Status{
 		$this->shouldExit = 0;
 		$this->config = new Config($cfgpath);
 		$this->devicePool = new DevicePool();
-		$this->tcpManager = new TCPCommandsManager($this, $this->config->getValue("tcpPort") ?? 6969);
+		$this->tcpManager = new TCPCommandsManager(
+			$this,
+			$this->config->getValue("tcpPort") ?? 6969,
+			$this->config->getValue("strictMode") ?? true
+		);
 
 		$this->cycleColors = $this->config->getValue("cycleColors");
 		foreach($this->cycleColors as $key => $colors)

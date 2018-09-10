@@ -24,7 +24,9 @@
     ]
   },
   "tcpPort": 6969,
+  "strictMode": true,
   "useLocalDiscovery": true,
   "discoveryPort": 6969,
-  "broadcastEvery": 5
+  "broadcastEvery": 5,
+  "debugMode": false
 }

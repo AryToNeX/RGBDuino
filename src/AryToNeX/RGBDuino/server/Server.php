@@ -28,8 +28,9 @@ $tries = 0;
 do{
 	$good = true;
 	$discovery->checkConnected();
-	$status->getDevicePool()->add("FakeArduino", new devices\FakeArduino());
-	// DEBUGGING FTW
+
+	if($status->getConfig()->getValue("debugMode") ?? false)
+		$status->getDevicePool()->add("FakeArduino", new devices\FakeArduino());
 	if(empty($status->getDevicePool()->toArray())){
 		echo "No devices connected! Waiting 2 seconds...\n";
 		$tries++;

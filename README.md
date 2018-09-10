@@ -275,6 +275,11 @@ It is located by default in `~/.local/share/RGBDuino-Server/config.json`
   // want to connect to the daemon from the LAN to change colors and do stuff.
   "tcpPort": 6969,
   
+  // Strict mode prevents every TCP command from third parties if a client is
+  // connected. This means that tools like the CLI util will not work unless you're
+  // using it on the same device where the client is running.
+  // Disable it only if you know what you're doing.
+  
   // Should RGBDuino-Server announce itself to other clients?
   // Disable this if you're running static IP configurations
   "useLocalDiscovery": true,
@@ -283,7 +288,11 @@ It is located by default in `~/.local/share/RGBDuino-Server/config.json`
   "discoveryPort": 6969,
   
   // How many seconds should pass between discovery broadcasts? (1-30)
-  "broadcastEvery": 5
+  "broadcastEvery": 5,
+  
+  // Debug mode adds a FakeArduino to display raw data
+  // Useful ONLY for tests/debugging purposes
+  "debugMode": false
 }
 ```
 
