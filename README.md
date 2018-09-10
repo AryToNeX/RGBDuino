@@ -279,6 +279,7 @@ It is located by default in `~/.local/share/RGBDuino-Server/config.json`
   // connected. This means that tools like the CLI util will not work unless you're
   // using it on the same device where the client is running.
   // Disable it only if you know what you're doing.
+  "strictMode": true,
   
   // Should RGBDuino-Server announce itself to other clients?
   // Disable this if you're running static IP configurations
