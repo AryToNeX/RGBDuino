@@ -120,6 +120,9 @@ while(true){
 				echo "Client is not here anymore\n";
 			}
 
+	// DIRECT MODE? IF SO, DO NOT EXECUTE THE CODE BELOW
+	if($status->getDirectMode()) continue;
+
 	// ANIMATIONS PART
 	if($status->getPlayerStatus() !== null){
 		$oldURL = $status->getPlayerStatus()->getArtURL(); // old album art URL for comparison

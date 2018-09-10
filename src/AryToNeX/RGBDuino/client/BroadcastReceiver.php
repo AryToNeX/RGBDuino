@@ -29,12 +29,8 @@ class BroadcastReceiver{
 
 	/** @var Status */
 	protected $status;
-	/** @var array */
-	protected $networks;
 	/** @var resource */
 	protected $sock;
-	/** @var int */
-	protected $tries;
 
 	/**
 	 * BroadcastReceiver constructor.
@@ -44,7 +40,6 @@ class BroadcastReceiver{
 	 */
 	public function __construct(Status $status, int $port){
 		$this->status = $status;
-		$this->networks = self::getIpArray();
 		$this->sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
 		socket_set_nonblock($this->sock);
 		socket_set_option($this->sock, SOL_SOCKET, SO_REUSEADDR, 1);
@@ -53,11 +48,11 @@ class BroadcastReceiver{
 	}
 
 	public function receiveBroadcast(){
-		$msg = json_decode(self::socket_read($this->sock), true);
-		if(!empty($msg) || (isset($msg["ip"]) && isset($msg["port"]))){
+		$msg = $this->message_parse();
+		if(isset($msg)){
 				echo "Broadcast received from server; connecting...\n";
 				if($this->connectToServer($msg["ip"], $msg["port"]))
-					$this->tries = 0;
+					echo "Connected to server!\n";
 		}
 	}
 
@@ -77,51 +72,27 @@ class BroadcastReceiver{
 	}
 
 	/**
-	 * @return array
-	 */
-	protected static function getIpArray() : array{
-		exec("ifconfig", $out);
-		$out = implode("\n", $out);
-		$out = explode("\n\n", $out);
-		$networks = array();
-		foreach($out as $str){
-			/** @var string $str */
-			preg_match_all("/([a-zA-Z0-9]+): flags|inet ([0-9.]+)  |netmask ([0-9.]+)/", $str, $matches);
-
-			// get rid of irrelevant things
-			array_shift($matches);
-
-			// check IP
-			if(empty($matches[1][1]) || $matches[1][1] == "127.0.0.1") continue;
-
-			// map
-			$network = array(
-				"card" => $matches[0][0],
-				"ip"   => $matches[1][1],
-				"mask" => $matches[2][2],
-			);
-			$networks[] = $network;
-		}
-
-		return $networks;
-	}
-
-	/**
-	 * @param        $sock
 	 * @param int    $timeout
 	 *
-	 * @return string
+	 * @return array
 	 */
-	protected static function socket_read($sock, $timeout = 5) : string{
+	protected function message_parse($timeout = 5) : ?array{
 		$data = "";
 		$preTime = time();
 		do{
-			socket_recv($sock, $buf, 100, 0);
+			socket_recvfrom($this->sock, $buf, 100, 0, $ip, $port);
 			$data .= $buf;
 			if(time() - $preTime > $timeout) break;
 		}while($buf === null);
 
-		return $data;
+		$msg = json_decode($data, true);
+		if(!empty($msg) && isset($msg["port"])){
+			$msg["ip"] = $ip;
+
+			return $msg;
+		}
+
+		return null;
 	}
 
 }

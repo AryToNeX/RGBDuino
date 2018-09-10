@@ -25,6 +25,8 @@ namespace AryToNeX\RGBDuino\server;
  */
 class Status{
 
+	/** @var int */
+	private $directMode;
 	/** @var Color[]|null */
 	private $userChosenColorArray;
 	/** @var int */
@@ -56,6 +58,7 @@ class Status{
 	 * @param null|string $cfgpath
 	 */
 	public function __construct(?string $cfgpath = null){
+		$this->directMode = false;
 		$this->userChosenColorArray = array();
 		$this->shouldExit = 0;
 		$this->config = new Config($cfgpath);
@@ -116,6 +119,20 @@ class Status{
 			$values["wallColor"] = $this->wallpaperColor->asHex();
 
 		file_put_contents("/home/" . exec("whoami") . "/.cache/RGBDuino/status.json", json_encode($values));
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getDirectMode() : int{
+		return $this->directMode;
+	}
+
+	/**
+	 * @param int $directMode
+	 */
+	public function setDirectMode(int $directMode) : void{
+		$this->directMode = $directMode;
 	}
 
 	/**

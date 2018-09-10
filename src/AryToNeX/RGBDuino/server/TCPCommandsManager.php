@@ -80,15 +80,34 @@ class TCPCommandsManager{
 					break;
 				case "setColor":
 					if(!isset($str[0])){
-						socket_write($accept, "COLOR_ERROR\n");
-						echo "TCP: Custom color was not set\n";
+						socket_write($accept, "COLOR_ERROR_NOT_ENOUGH_ARGS\n");
+						echo "TCP: Custom color was not specified!\n";
 						break;
 					}
+					if(
+						isset($str[1]) &&
+						$str[1] !== "global" &&
+						$this->owner->getDevicePool()->get($str[1], true) === null
+					){
+						socket_write($accept, "COLOR_ERROR_DEVICE_NOT_FOUND\n");
+						echo "TCP: Custom color was not set due to device not found\n";
+						break;
+					}
+
 					$this->owner->setUserChosenColor(Color::fromHex($str[0]), $str[1] ?? null);
 					socket_write($accept, "COLOR_SET\n");
 					echo "TCP: Set custom color to {$str[0]} in device " . ($str[1] ?? "global") . "\n";
 					break;
 				case "unsetColor":
+					if(
+						isset($str[0]) &&
+						$str[0] !== "global" &&
+						$this->owner->getDevicePool()->get($str[0], true) === null
+					){
+						socket_write($accept, "COLOR_ERROR_DEVICE_NOT_FOUND\n");
+						echo "TCP: Custom color was not unset due to device not found\n";
+						break;
+					}
 					$this->owner->setUserChosenColor(null, $str[0] ?? null);
 					socket_write($accept, "COLOR_UNSET\n");
 					echo "TCP: Unset custom color in device " . ($str[0] ?? "global") . "\n";
@@ -96,7 +115,7 @@ class TCPCommandsManager{
 				case "setWallpaperColor":
 					if(!isset($str[0])){
 						socket_write($accept, "COLOR_ERROR\n");
-						echo "TCP: Wallpaper color was not set\n";
+						echo "TCP: Wallpaper color was not specified!\n";
 						break;
 					}
 					$this->owner->setWallpaperColor(Color::fromHex($str[0]));
@@ -135,20 +154,20 @@ class TCPCommandsManager{
 					$json = base64_decode(trim(implode(" ", $str)));
 					if(!isset($json) || $json === ""){
 						socket_write($accept, "PLAYER_DETAILS_ERROR\n");
-						echo "TCP: Player details were not set\n";
+						echo "TCP: Player details were not set; message is invalid\n";
 						break;
 					}
 
 					$json = json_decode($json, true);
 					if(!isset($json["playing"])){
 						socket_write($accept, "PLAYER_DETAILS_ERROR\n");
-						echo "TCP: Player details were not set\n";
+						echo "TCP: Player details were not set; message is invalid\n";
 						break;
 					}
 					$this->owner->getPlayerStatus()->setPlaying($json["playing"]);
 					if($json["playing"] && !isset($json["url"])){
 						socket_write($accept, "PLAYER_DETAILS_ERROR\n");
-						echo "TCP: Player details were not set\n";
+						echo "TCP: Player details were not set; message is invalid\n";
 						break;
 					}
 					$this->owner->getPlayerStatus()->setArtURL($json["url"]);
@@ -169,32 +188,27 @@ class TCPCommandsManager{
 				case "listDevices":
 					$devices = $this->owner->getDevicePool()->toArray();
 					$devJson = array();
-					foreach($devices as $id => $device)
+					foreach($devices as $id => $device){
 						try{
 							$reflection = new \ReflectionClass($device);
 						}catch(\ReflectionException $exception){
 							continue; // F for the object
 						}
-					$devJson[$id] = array(
-						"type"    => $reflection->getShortName(),
-						"on"      => $device->isActive(),
-						"current" => $device->getCurrentColor()->asHex(),
-						"chosen"  => ($this->owner->getUserChosenColor($id) === null ? null :
-							$this->owner->getUserChosenColor($id)->asHex()),
-					);
+						$devJson[$id] = array(
+							"type"    => $reflection->getShortName(),
+							"on"      => $device->isActive(),
+							"current" => $device->getCurrentColor()->asHex(),
+							"chosen"  => ($this->owner->getUserChosenColor($id) === null ? null :
+								$this->owner->getUserChosenColor($id)->asHex()),
+						);
+					}
 					socket_write($accept, base64_encode(json_encode($devJson)));
-					echo "TCP: Devices list sent.";
+					echo "TCP: Devices list sent.\n";
 					break;
 				case "setDevice":
 					if(!isset($str[0]) || !isset($str[1])){
 						socket_write($accept, "SETDEVICE_NOT_ENOUGH_ARGS\n");
 						echo "TCP: Not enough arguments on setDevice\n";
-						break;
-					}
-					$device = $this->owner->getDevicePool()->get($str[0], false);
-					if(!isset($device)){
-						socket_write($accept, "SETDEVICE_DEVICE_NOT_FOUND\n");
-						echo "TCP: Device $str[0] not found\n";
 						break;
 					}
 					$state = strtolower($str[1]);
@@ -203,9 +217,67 @@ class TCPCommandsManager{
 						echo "TCP: Unrecognized switch $state for setDevice (device $str[0])\n";
 						break;
 					}
+					if(strtolower($str[0]) === "global"){
+						foreach($this->owner->getDevicePool()->toArray() as $device)
+							$device->setActive($state == "on" ? true : false);
+
+						socket_write($accept, "SETDEVICE_SUCCESS\n");
+						echo "TCP: Device $str[0] set to $state\n";
+						break;
+					}
+					$device = $this->owner->getDevicePool()->get($str[0], false);
+					if(!isset($device)){
+						socket_write($accept, "SETDEVICE_DEVICE_NOT_FOUND\n");
+						echo "TCP: SetDevice: Device $str[0] not found\n";
+						break;
+					}
 					$device->setActive($state == "on" ? true : false);
 					socket_write($accept, "SETDEVICE_SUCCESS\n");
 					echo "TCP: Device $str[0] set to $state\n";
+					break;
+				case "directMode":
+					if(!isset($str[0])){
+						socket_write($accept, "DIRECTMODE_NOT_ENOUGH_ARGS\n");
+						echo "TCP: Not enough arguments on direct mode\n";
+						break;
+					}
+					$state = strtolower($str[1]);
+					if($state !== "on" && $state !== "off"){
+						socket_write($accept, "DIRECTMODE_UNRECOGNIZED_SWITCH\n");
+						echo "TCP: Unrecognized switch $state for direct mode\n";
+						break;
+					}
+					$this->owner->setDirectMode($state === "on" ? true : false);
+					break;
+				case "directPut":
+					if(!$this->owner->getDirectMode()){
+						socket_write($accept, "DIRECTPUT_ERROR_NOT_ENABLED\n");
+						echo "TCP: DirectPut: Direct mode is not enabled!\n";
+						break;
+					}
+					if(!isset($str[0]) || !isset($str[1])){
+						socket_write($accept, "DIRECTPUT_ERROR_NOT_ENOUGH_ARGS\n");
+						echo "TCP: DirectPut: Not enough arguments!\n";
+						break;
+					}
+					if(
+						strtolower($str[1]) !== "global" &&
+						$this->owner->getDevicePool()->get($str[1], false) === null
+					){
+						socket_write($accept, "DIRECTPUT_ERROR_DEVICE_NOT_FOUND\n");
+						echo "TCP: DirectPut: Color was not set due to device not found\n";
+						break;
+					}
+					if(strtolower($str[1]) === "global"){
+						foreach($this->owner->getDevicePool()->toArray() as $device)
+							$device->sendColor(Color::fromHex($str[0]));
+						socket_write($accept, "DIRECTPUT_SET\n");
+						echo "TCP: Direct put color to {$str[0]} globally\n";
+						break;
+					}
+					$this->owner->getDevicePool()->get($str[1], false)->sendColor(Color::fromHex($str[0]));
+					socket_write($accept, "DIRECTPUT_SET\n");
+					echo "TCP: Direct put color to {$str[0]} in device " . $str[1] . "\n";
 					break;
 				case "restart":
 					socket_write($accept, "RESTARTING\n");
