@@ -28,8 +28,8 @@ class FakeArduino extends Arduino{
 	 * FakeArduino constructor.
 	 */
 	public function __construct(){
-		parent::__construct();
-
+		parent::__construct("FakeArduino");
+		$this->computeIdentifier();
 		echo "Fake arduino opened!\n";
 	}
 
@@ -46,6 +46,10 @@ class FakeArduino extends Arduino{
 	 */
 	protected function sendData(string $data) : void{
 		echo "Fake Arduino received: $data\n";
+	}
+
+	protected function computeIdentifier() : void{
+		$this->identifier = "FakeArduino";
 	}
 
 }

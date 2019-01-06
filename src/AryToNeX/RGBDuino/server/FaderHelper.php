@@ -196,13 +196,15 @@ class FaderHelper{
 			}
 
 			foreach($pool as $id => $device)
-				$device->sendColor($shade["shade"][$id]);
+				if($device->isActive())
+					$device->sendColor($shade["shade"][$id]);
 
 			if(isset($shouldStop) and $shouldStop()) return;
 		}
 
 		foreach($pool as $id => $device)
-			$device->sendColor($finishedColors[$id]);
+			if($device->isActive())
+				$device->sendColor($finishedColors[$id]);
 
 		echo "Faded in total of " . (microtime(true) - $beginSec) . " seconds\n";
 	}

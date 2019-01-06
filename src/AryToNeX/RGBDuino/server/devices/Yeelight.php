@@ -37,15 +37,23 @@ class Yeelight extends Device{
 	/**
 	 * Yeelight constructor.
 	 *
+	 * @param string $identifier
 	 * @param string $ip
 	 *
 	 * @throws MalformedIPException
 	 */
-	public function __construct(string $ip){
-		parent::__construct();
+	public function __construct(string $identifier, string $ip){
+		parent::__construct($identifier);
 		$this->ip = filter_var($ip, FILTER_VALIDATE_IP);
 		if($this->ip === false) throw new MalformedIPException("Malformed IP!");
 		$this->setActive(true);
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getIp() : string{
+		return $this->ip;
 	}
 
 	/**
@@ -160,4 +168,7 @@ class Yeelight extends Device{
 		return true;
 	}
 
+	protected function computeIdentifier() : void{
+		return; // Nothing for now
+	}
 }

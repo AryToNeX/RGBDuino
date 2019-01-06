@@ -22,6 +22,9 @@ const byte rPin = 9;
 const byte gPin = 10;
 const byte bPin = 11;
 
+// Set your identifier here
+String id = "Arduino over BT";
+
 // Set your Bluetooth TX pin here (PWM)
 const byte txPin = 6;
 // Set your Bluetooth RX pin here (Non-PWM)
@@ -44,15 +47,19 @@ void setup(){
   restoreColors();
   writeColors();
   BTSerial.begin(9600);
+  BTSerial.println("init");
 }
 
 // Loop, read from serial and update color, maybe save the color to EEPROM
 void loop(){
   if(BTSerial.available() > 0){
     inString = BTSerial.readStringUntil('\n');
-    BTSerial.println(inString);
     if(inString.equals("save")){
       saveColors();
+      return;
+    }
+    if(inString.equals("id")){
+      Serial.println(id);
       return;
     }
 

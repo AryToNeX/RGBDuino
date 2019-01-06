@@ -21,6 +21,9 @@ const byte rPin = 9;
 const byte gPin = 10;
 const byte bPin = 11;
 
+// Set your identifier here
+String id = "Arduino";
+
 // Variables used in the loop
 String inString;
 int rIntensity;
@@ -35,15 +38,19 @@ void setup(){
   restoreColors();
   writeColors();
   Serial.begin(9600);
+  Serial.println("init");
 }
 
 // Loop, read from serial and update color, maybe save the color to EEPROM
 void loop(){
   if(Serial.available() > 0){
     inString = Serial.readStringUntil('\n');
-    Serial.println(inString);
     if(inString.equals("save")){
       saveColors();
+      return;
+    }
+    if(inString.equals("id")){
+      Serial.println(id);
       return;
     }
 

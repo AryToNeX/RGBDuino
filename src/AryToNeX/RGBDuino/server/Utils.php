@@ -57,4 +57,43 @@ class Utils{
 		);
 	}
 
+    /**
+     * @param        $sock
+     * @param string $str
+     * @param bool   $or_until_data_finish
+     * @param int    $timeout
+     *
+     * @return string
+     */
+    public static function socket_read_until($sock,
+                                                string $str,
+                                                bool $or_until_data_finish = true,
+                                                int $timeout = 5) : string{
+        $data = "";
+        $buf = "";
+        $preTime = time();
+        while(true){
+            $by = socket_recv($sock, $buf, 1, MSG_DONTWAIT);
+
+            // if char reached break
+            if($buf === $str) break;
+
+            // if remote disconnects break
+            if($by === 0) break;
+
+            // if connection timeouts break
+            if(time() - $preTime > $timeout) break;
+
+            // if data finishes break
+            if($or_until_data_finish && $buf === null){
+                if($data !== "") break;
+            }
+
+            // add buffer to data string
+            $data .= $buf;
+        }
+
+        return $data;
+    }
+
 }

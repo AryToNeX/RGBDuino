@@ -30,12 +30,12 @@ class DevicePool{
 	private $pool = array();
 
 	/**
-	 * @param string $identifier
 	 * @param Device $device
 	 *
 	 * @return bool
 	 */
-	public function add(string $identifier, Device $device) : bool{
+	public function add(Device $device) : bool{
+		$identifier = $device->getIdentifier();
 		if(isset($this->pool[$identifier])) return false;
 		$this->pool[$identifier] = $device;
 

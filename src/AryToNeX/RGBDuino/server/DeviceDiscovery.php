@@ -79,15 +79,18 @@ class DeviceDiscovery{
 			$serials = Utils::detectUSBArduino();
 			if(!empty($serials))
 				foreach($serials as $serial){
-					$id = "USB-" . $serial;
-
-					if($this->status->getDevicePool()->get($id) !== null) continue;
+					foreach($this->status->getDevicePool()->toArray() as $device){
+						if($device instanceof USBArduino){
+							if($device->getTTY() === "/dev/" . $serial) continue 2;
+						}
+					}
 
 					try{
-						$this->status->getDevicePool()->add(
-							$id,
-							new USBArduino($serial, $this->status->getConfig()->getValue("baudRate") ?? 9600)
-						);
+						$device = new USBArduino("USB-".$serial, $serial, $this->status->getConfig()->getValue
+						("baudRate") ??
+							9600);
+						$id = $device->getIdentifier();
+						$this->status->getDevicePool()->add($device);
 					}catch(SerialPortNotFoundException | CannotOpenSerialConnectionException $e){
 						echo "Exception in USB device: " . $e->getMessage() . "\n";
 						continue;
@@ -100,19 +103,22 @@ class DeviceDiscovery{
 	public function checkBluetoothConnected() : void{
 		if($this->status->getConfig()->getValue("useBluetooth") ?? false){
 			foreach($this->status->getConfig()->getValue("bluetooth") as $btd){
-				$id = "BT-" . $btd["identifier"];
 
-				if($this->status->getDevicePool()->get($id) !== null) continue;
+				foreach($this->status->getDevicePool()->toArray() as $device){
+					if($device instanceof BTArduino){
+						if($device->getMAC() === $btd["mac"]) continue 2;
+					}
+				}
 
 				try{
-					$this->status->getDevicePool()->add(
-						$id,
-						new BTArduino(
-							$btd["mac"],
-							$btd["rfcommPort"] ?? null,
-							$this->status->getConfig()->getValue("baudRate") ?? 9600
-						)
+					$device = new BTArduino(
+						$btd["identifier"],
+						$btd["mac"],
+						$btd["rfcommPort"] ?? null,
+						$this->status->getConfig()->getValue("baudRate") ?? 9600
 					);
+					$id = $device->getIdentifier();
+					$this->status->getDevicePool()->add($device);
 				}catch(
 				CannotOpenSerialConnectionException |
 				MalformedMACAddressException |
@@ -130,15 +136,17 @@ class DeviceDiscovery{
 	public function checkYeelightConnected() : void{
 		if($this->status->getConfig()->getValue("useYeelight") ?? false){
 			foreach($this->status->getConfig()->getValue("yeelight") as $yee){
-				$id = "YEE-" . $yee["identifier"];
 
-				if($this->status->getDevicePool()->get($id) !== null) continue;
+				foreach($this->status->getDevicePool()->toArray() as $device){
+					if($device instanceof Yeelight){
+						if($device->getIp() === $yee["ip"]) continue 2;
+					}
+				}
 
 				try{
-					$this->status->getDevicePool()->add(
-						$id,
-						new Yeelight($yee["ip"])
-					);
+					$device = new Yeelight($yee["identifier"], $yee["ip"]);
+					$id = $device->getIdentifier();
+					$this->status->getDevicePool()->add($device);
 				}catch(MalformedIPException $e){
 					echo "Exception in Yeelight device: " . $e->getMessage() . "\n";
 					continue;

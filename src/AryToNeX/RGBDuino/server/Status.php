@@ -43,14 +43,18 @@ class Status{
 	private $config;
 	/** @var PlayerStatus */
 	private $playerStatus;
-	/** @var TCPCommandsManager */
+	/** @var TCPManager */
 	private $tcpManager;
 	/** @var Broadcast */
 	private $broadcast;
 	/** @var string */
 	private $connectedClient;
+	/** @var array */
+	private $connectedControllers;
 	/** @var int */
 	private $shouldExit;
+	/** @var KeyPool */
+	private $keyPool;
 
 	/**
 	 * Status constructor.
@@ -63,16 +67,16 @@ class Status{
 		$this->shouldExit = 0;
 		$this->config = new Config($cfgpath);
 		$this->devicePool = new DevicePool();
-		$this->tcpManager = new TCPCommandsManager(
-			$this,
-			$this->config->getValue("tcpPort") ?? 6969,
-			$this->config->getValue("strictMode") ?? true
-		);
+		$this->keyPool = new KeyPool();
+		foreach(json_decode(file_get_contents(__DIR__ . "resources/keys.json"), true) as $key){
+		    $this->keyPool->enroll(new ClientKey($key["key"], $key["name"]));
+        }
 
-		$this->cycleColors = $this->config->getValue("cycleColors");
-		foreach($this->cycleColors as $key => $colors)
-			foreach($colors as $id => $color)
-				$this->cycleColors[$key][$id] = Color::fromHex($color);
+		$this->tcpManager = new TCPManager(
+			$this,
+			$this->config->getValue("tcpPort") ?? 6969
+		);
+		$this->connectedControllers = array();
 
 		if($this->config->getValue("useLocalDiscovery") ?? true){
 			$this->broadcast = new Broadcast($this, $this->config->getValue("discoveryPort") ?? 6969);
@@ -82,8 +86,18 @@ class Status{
 		if($this->config->getValue("acceptAlbumArtColors") ?? false)
 			$this->playerStatus = new PlayerStatus($this);
 
+		// calculate color cycles
+		$this->calculateCycleColors();
+
 		// restore previous status for certain values
 		$this->restoreValues();
+	}
+
+	public function calculateCycleColors() : void{
+		$this->cycleColors = array();
+		foreach($this->config->getValue("cycleColors") as $key => $colors)
+			foreach($colors as $id => $color)
+				$this->cycleColors[$key][$id] = Color::fromHex($color);
 	}
 
 	protected function restoreValues() : void{
@@ -209,9 +223,9 @@ class Status{
 	}
 
 	/**
-	 * @return TCPCommandsManager
+	 * @return TCPManager
 	 */
-	public function getTcpManager() : TCPCommandsManager{
+	public function getTcpManager() : TCPManager{
 		return $this->tcpManager;
 	}
 
@@ -280,5 +294,30 @@ class Status{
 	 */
 	public function setShouldExit(int $shouldExit) : void{
 		$this->shouldExit = $shouldExit;
+	}
+
+    /**
+     * @return KeyPool
+     */
+    public function getKeyPool() : KeyPool{
+        return $this->keyPool;
+    }
+
+	/**
+	 * @return array
+	 */
+	public function toArray() : array{
+		$colors = array();
+		foreach($this->userChosenColorArray as $id => $value)
+			$colors[$id] = $value->asHex();
+
+		return array(
+			"connectedClient" => $this->connectedClient,
+			"connectedControllers" => $this->connectedControllers,
+			"directMode" => $this->directMode,
+			"chosenColors" => $colors,
+			"isShowing" => $this->showing,
+			"wallpaperColor" => $this->wallpaperColor->asHex(),
+		);
 	}
 }

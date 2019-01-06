@@ -36,6 +36,7 @@ class BTArduino extends Arduino{
 	/**
 	 * BTArduino constructor.
 	 *
+	 * @param string $identifier
 	 * @param string $macAddress
 	 * @param int    $rfcommPort
 	 * @param int    $baudRate
@@ -45,8 +46,8 @@ class BTArduino extends Arduino{
 	 * @throws SerialPortNotFoundException
 	 * @throws RFCOMMPortExistsException
 	 */
-	public function __construct(string $macAddress, ?int $rfcommPort = null, int $baudRate = 9600){
-		parent::__construct();
+	public function __construct(string $identifier, string $macAddress, ?int $rfcommPort = null, int $baudRate = 9600){
+		parent::__construct($identifier);
 
 		// MAC ADDRESS SANITY CHECK
 		// it MUST be uppercase and formatted as XX:XX:XX:YY:YY:YY
@@ -87,6 +88,20 @@ class BTArduino extends Arduino{
 		// open serial stream
 		$this->stream = fopen($this->tty, "w+");
 		if(!$this->stream) throw new CannotOpenSerialConnectionException("Can't establish serial connection");
+		stream_set_blocking($this->stream, false);
+
+		// wait for init
+		while(trim(fgets($this->stream)) !== "init") continue;
+
+		// retrieve identifier
+		$this->computeIdentifier();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getMAC() : string{
+		return $this->mac;
 	}
 
 	/**
@@ -101,6 +116,14 @@ class BTArduino extends Arduino{
 	 */
 	protected function sendData(string $data) : void{
 		fwrite($this->stream, $data . "\n");
+	}
+
+	protected function computeIdentifier() : void{
+		$this->sendData("id");
+		usleep(20000); // let the stream populate
+		$id = trim(fgets($this->stream));
+		if(!empty($id))
+			$this->identifier = $id;
 	}
 
 	public function close() : void{

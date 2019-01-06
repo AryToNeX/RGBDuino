@@ -52,6 +52,24 @@ class Config{
 		return $this->data[$key];
 	}
 
+	/**
+	 * @param string $key
+	 * @param        $value
+	 */
+	public function setValue(string $key, $value) : void{
+		if(isset($this->data[$key]))
+			$this->data[$key] = $value;
+	}
+
+	/**
+	 * @param string $key
+	 * @param array  $value
+	 */
+	public function setValueReplace(string $key, array $value) : void{
+		if(isset($this->data[$key]))
+			$this->data[$key] =	array_replace_recursive($this->data[$key], $value);
+	}
+
 	protected function fixMissing() : void{
 		if(!is_file($this->path)){
 			@mkdir(pathinfo($this->path, PATHINFO_DIRNAME), 0755, true);

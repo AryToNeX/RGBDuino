@@ -30,7 +30,7 @@ do{
 	$discovery->checkConnected();
 
 	if($status->getConfig()->getValue("debugMode") ?? false)
-		$status->getDevicePool()->add("FakeArduino", new devices\FakeArduino());
+		$status->getDevicePool()->add(new devices\FakeArduino());
 	if(empty($status->getDevicePool()->toArray())){
 		echo "No devices connected! Waiting 2 seconds...\n";
 		$tries++;
@@ -73,13 +73,15 @@ if($status->getConfig()->getValue("saveDefaultColor") ?? false){
 }
 
 $albumArtMediaArray = array();
+$albumCounter = 0;
+
 $cycleKeys = array();
 foreach(array_keys($status->getCycleColors()) as $key)
 	$cycleKeys[$key] = 0;
 
 $doStuff = function() use ($status){
 	// tcp commands
-	$status->getTcpManager()->receiveAndProcessCommands();
+	$ret = $status->getTcpManager()->receiveTcp();
 
 	// broadcasting
 	if($status->getBroadcast() !== null)
@@ -98,6 +100,8 @@ $doStuff = function() use ($status){
 		}
 		exit(0);
 	}
+
+	return $ret["faderShouldStop"] ?? false;
 };
 
 // cycle between animations
@@ -138,33 +142,33 @@ while(true){
 				echo "Album art changed\n";
 				$albumArtMediaArray = $status->getPlayerStatus()->getAlbumArtColorArray();
 			}
-			/** @var Color $color */
-			foreach($albumArtMediaArray as $color){
-				$oldURL = $status->getPlayerStatus()->getArtURL();
-				$fader->timedFadeTo(
-					["global" => $color],
-					$status->getConfig()->getValue("animationFadeSeconds") ?? 5,
-					function() use ($oldURL, $status, $doStuff){
-						$doStuff(); // check networking
-						// interrupt color cycling if track is not playing or if track skipped
-						if(!$status->getPlayerStatus()->isPlaying())
-							return true;
-						if($oldURL !== $status->getPlayerStatus()->getArtURL())
-							return true;
+			$oldURL = $status->getPlayerStatus()->getArtURL();
 
-						return false;
-					},
-					$status->getConfig()->getValue("albumArtColorsOverChosenColors") ?? true
-				);
-				// interrupt color cycling if track is not playing or if track skipped
-				if(!$status->getPlayerStatus()->isPlaying())
-					continue 2;
+            if($albumCounter >= count($albumArtMediaArray)) $albumCounter = 0;
+			$fader->timedFadeTo(
+				["global" => $albumArtMediaArray[$albumCounter++]],
+				$status->getConfig()->getValue("animationFadeSeconds") ?? 5,
+				function() use ($oldURL, $status, $doStuff){
+					if($doStuff() === true) return false; // check networking stuff
+					// interrupt color cycling if track is not playing or if track skipped
+					if(!$status->getPlayerStatus()->isPlaying())
+						return true;
+					if($oldURL !== $status->getPlayerStatus()->getArtURL())
+						return true;
 
-				if($oldURL !== $status->getPlayerStatus()->getArtURL()){
-					echo "Album art changed\n";
-					$albumArtMediaArray = $status->getPlayerStatus()->getAlbumArtColorArray();
-					continue 2;
-				}
+					return false;
+				},
+				$status->getConfig()->getValue("albumArtColorsOverChosenColors") ?? true
+			);
+
+			// interrupt color cycling if track is not playing or if track skipped
+			if(!$status->getPlayerStatus()->isPlaying())
+				continue;
+
+			if($oldURL !== $status->getPlayerStatus()->getArtURL()){
+				echo "Album art changed\n";
+				$albumArtMediaArray = $status->getPlayerStatus()->getAlbumArtColorArray();
+				continue;
 			}
 			continue;
 		}else{
@@ -180,7 +184,7 @@ while(true){
 			["global" => $status->getUserChosenColor()],
 			$status->getConfig()->getValue("normalFadeSeconds") ?? 2,
 			function() use ($status, $doStuff){
-				$doStuff(); // check networking
+                if($doStuff() === true) return false; // check networking
 				// check if music is playing
 				if(
 					$status->getPlayerStatus() !== null &&
@@ -213,7 +217,7 @@ while(true){
 			$colors,
 			$status->getConfig()->getValue("animationFadeSeconds") ?? 5,
 			function() use ($status, $doStuff){
-				$doStuff(); // check networking
+                if($doStuff() === true) return false; // check networking
 				// check if music is playing
 				if(
 					$status->getPlayerStatus() !== null &&
@@ -254,7 +258,7 @@ while(true){
 			["global" => $status->getWallpaperColor()],
 			$status->getConfig()->getValue("normalFadeSeconds") ?? 2,
 			function() use ($status, $doStuff){
-				$doStuff(); // check networking
+                if($doStuff() === true) return false; // check networking
 				// check if music is playing
 				if(
 					$status->getPlayerStatus() !== null &&
@@ -282,7 +286,7 @@ while(true){
 			["global" => Color::fromHex($status->getConfig()->getValue("defaultColor") ?? "FFFFFF")],
 			$status->getConfig()->getValue("normalFadeSeconds") ?? 2,
 			function() use ($status, $doStuff){
-				$doStuff(); // check networking
+                if($doStuff() === true) return false; // check networking
 				// check if music is playing
 				if(
 					$status->getPlayerStatus() !== null &&

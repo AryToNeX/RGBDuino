@@ -30,10 +30,19 @@ abstract class Device{
 	protected $isActive;
 	/** @var Color */
 	protected $currentColor;
+	/** @var string */
+	protected $identifier;
 
-	public function __construct(){
+	public function __construct(string $identifier){
+		$this->identifier = $identifier;
 		$this->isActive = true;
 		$this->currentColor = new Color(0, 0, 0); // Placeholder af
+	}
+
+	abstract protected function computeIdentifier() : void;
+
+	public function getIdentifier() : string{
+		return $this->identifier;
 	}
 
 	/**

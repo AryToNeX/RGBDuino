@@ -55,9 +55,6 @@ abstract class Arduino extends Device{
 		$this->sendData($color);
 	}
 
-	/**
-	 *
-	 */
 	public function saveDisplayedColor() : void{
 		$this->sendData("save");
 	}
